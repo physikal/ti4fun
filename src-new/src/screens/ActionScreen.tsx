@@ -164,7 +164,7 @@ export function ActionScreen() {
                         : ""
                   }`}
                   style={{
-                    borderTopColor: badges[0].color,
+                    borderTopColor: badges[0]?.color ?? "#666",
                     borderTopWidth: "3px",
                   }}
                 >
