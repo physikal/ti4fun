@@ -205,7 +205,7 @@ export function SetupScreen() {
               type="text"
               value={tempName}
               onChange={(e) => setTempName(e.target.value)}
-              placeholder="Optional"
+              placeholder="Required"
               className="w-full mt-1 px-3 py-2 bg-black/30 border border-hud-border rounded text-hud-text placeholder:text-hud-muted/50 outline-none focus:border-hud-accent"
             />
           </div>
@@ -289,7 +289,7 @@ export function SetupScreen() {
 
           <HudButton
             onClick={confirmPlayer}
-            disabled={tempFaction === null || tempColor === null}
+            disabled={tempName.trim().length === 0 || tempFaction === null || tempColor === null}
             className="w-full"
           >
             {t("confirm", locale)}
