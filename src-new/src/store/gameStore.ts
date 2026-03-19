@@ -27,9 +27,15 @@ import {
   RAL_NEL_ID,
   OBSIDIAN_ID,
 } from "src/data/factions";
+import { getPlayerDisplayName } from "src/store/selectors";
 
 const MAX_LOG_ENTRIES = 500;
 let logIdCounter = 0;
+
+function playerName(player: Player | undefined | null): string {
+  if (!player) return "?";
+  return getPlayerDisplayName(player, "en");
+}
 
 function createSnapshot(state: GameState): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -234,7 +240,7 @@ export const useGameStore = create<GameStore>()(
 
       startGame: () => {
         set({
-          phase: "GALAXY",
+          phase: "STRATEGY",
           screen: "strategy",
           round: 1,
           roundCounter: 1,
@@ -267,7 +273,7 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const speaker = state.players[state.speakerId ?? 0];
         set({ modal: null });
-        logAction(get, set, `Speaker: ${speaker?.name ?? "Unknown"}`);
+        logAction(get, set, `Speaker: ${playerName(speaker)}`);
         if (state.phase === "STRATEGY") {
           get().initStrategyPhase();
         }
@@ -363,7 +369,7 @@ export const useGameStore = create<GameStore>()(
         if (get().playerChooseCount > prevCount) {
           const s = get();
           const slot = s.strategySlots[slotIndex];
-          const player = slot?.playerId !== null
+          const picker = slot?.playerId !== null
             ? s.players[slot?.playerId ?? 0]
             : null;
           const cardName = getStrategyName(
@@ -373,7 +379,7 @@ export const useGameStore = create<GameStore>()(
           logAction(
             get,
             set,
-            `${player?.name ?? "?"} picks ${cardName}`,
+            `${playerName(picker)} picks ${cardName}`,
           );
         }
       },
@@ -454,7 +460,7 @@ export const useGameStore = create<GameStore>()(
       },
 
       setTelepathicTarget: (playerId) => {
-        const targetName = get().players[playerId]?.name ?? "?";
+        const targetName = playerName(get().players[playerId]);
         set((state) => {
           let targetSlot = -1;
           for (let i = 0; i < state.strategySlots.length; i++) {
@@ -546,8 +552,8 @@ export const useGameStore = create<GameStore>()(
       resolveAction: (actions) => {
         const preState = get();
         const activeSlot = preState.strategySlots[preState.activeSlotIndex];
-        const playerName = activeSlot?.playerId !== null
-          ? preState.players[activeSlot?.playerId ?? 0]?.name ?? "?"
+        const actingPlayer = activeSlot?.playerId !== null
+          ? playerName(preState.players[activeSlot?.playerId ?? 0])
           : "?";
         let actionType = "Tactical";
         if (actions.pass) actionType = "Pass";
@@ -624,7 +630,7 @@ export const useGameStore = create<GameStore>()(
         logAction(
           get,
           set,
-          `${playerName}: ${actionType}`,
+          `${actingPlayer}: ${actionType}`,
         );
       },
 
