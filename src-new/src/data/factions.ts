@@ -8,8 +8,9 @@ export interface Faction {
   shortName: string;
 }
 
-const IMG = "/assets/factions/";
-const HERO = "/assets/heroes/";
+const BASE = import.meta.env.BASE_URL;
+const IMG = `${BASE}assets/factions/`;
+const HERO = `${BASE}assets/heroes/`;
 
 function f(
   id: number,
