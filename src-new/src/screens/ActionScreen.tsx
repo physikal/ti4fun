@@ -126,18 +126,36 @@ export function ActionScreen() {
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
           {strategySlots
             .filter((s) => s.playerId !== null)
-            .map((slot, i) => {
+            .map((slot) => {
               const player =
                 slot.playerId !== null ? players[slot.playerId] : null;
               if (!player) return null;
-              const isCurrent =
-                strategySlots.indexOf(slot) === activeSlotIndex;
+              const slotIdx = strategySlots.indexOf(slot);
+              const isCurrent = slotIdx === activeSlotIndex;
               const isPassed = slot.status === "passed";
 
-              const stratColor = getStrategyColor(slot.cardIndex);
+              const secondSlotForPlayer = playerCount <= 4
+                ? strategySlots.find(
+                    (s) => s.secondPickPlayerId === slot.playerId,
+                  )
+                : null;
+
+              const badges: { cardIndex: number; color: string }[] = [
+                {
+                  cardIndex: slot.cardIndex,
+                  color: getStrategyColor(slot.cardIndex),
+                },
+              ];
+              if (secondSlotForPlayer) {
+                badges.push({
+                  cardIndex: secondSlotForPlayer.cardIndex,
+                  color: getStrategyColor(secondSlotForPlayer.cardIndex),
+                });
+              }
+
               return (
                 <div
-                  key={i}
+                  key={slotIdx}
                   className={`hud-panel rounded-lg p-3 transition-all ${
                     isCurrent
                       ? "border-hud-accent bg-hud-accent/10"
@@ -146,21 +164,24 @@ export function ActionScreen() {
                         : ""
                   }`}
                   style={{
-                    borderTopColor: stratColor,
+                    borderTopColor: badges[0].color,
                     borderTopWidth: "3px",
                   }}
                 >
-                  <div className="flex justify-center mb-2">
-                    <span
-                      className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
-                      style={{
-                        backgroundColor: stratColor + "25",
-                        color: stratColor,
-                        border: `1px solid ${stratColor}50`,
-                      }}
-                    >
-                      {getStrategyName(slot.cardIndex, locale)}
-                    </span>
+                  <div className="flex flex-wrap justify-center gap-1 mb-2">
+                    {badges.map((b) => (
+                      <span
+                        key={b.cardIndex}
+                        className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: b.color + "25",
+                          color: b.color,
+                          border: `1px solid ${b.color}50`,
+                        }}
+                      >
+                        {getStrategyName(b.cardIndex, locale)}
+                      </span>
+                    ))}
                   </div>
                   <PlayerBadge
                     player={player}
