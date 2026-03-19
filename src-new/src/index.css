@@ -41,7 +41,7 @@
 
   body {
     background-color: var(--color-hud-bg);
-    background-image: url("/assets/backgrounds/bluespace.jpg");
+    background-image: url("../public/assets/backgrounds/bluespace.jpg");
     background-size: cover;
     background-position: center;
     background-attachment: fixed;

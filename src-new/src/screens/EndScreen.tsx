@@ -28,7 +28,7 @@ export function EndScreen() {
     <div
       className="flex flex-col h-full screen-fade-in"
       style={{
-        backgroundImage: "url(/assets/backgrounds/endgame.png)",
+        backgroundImage: `url(${import.meta.env.BASE_URL}assets/backgrounds/endgame.png)`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
