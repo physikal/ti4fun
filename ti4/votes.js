@@ -104,20 +104,18 @@ function fctNewAgenda()
 {
     fctSetPhase(PHASE_AGENDA);
     
-    if(document.getElementById("idAgendaPageCheck").checked == true)
-    {
-        // Show detailed voting page
-        document.getElementById("idAgendaStepPage").classList.remove("clDisplayNone");
-        document.getElementById("idAgendaVotePage").classList.add("clDisplayNone");
-        openTab("noButton", 'idAgendaTab');
-    }
-    else
-    {
-        // Show voting system
-        document.getElementById("idAgendaStepPage").classList.add("clDisplayNone");
-        document.getElementById("idAgendaVotePage").classList.remove("clDisplayNone");
-        fctPrepareAgenda(1);
-    }
+    // Show simple voting page
+    document.getElementById("idAgendaStepPage").classList.remove("clDisplayNone");
+    document.getElementById("idAgendaVotePage").classList.add("clDisplayNone");
+
+    // Reset simple vote counters
+    gSimpleAgendaStep = 1;
+    document.getElementById("idSimpleForCount").textContent = "0";
+    document.getElementById("idSimpleAgainstCount").textContent = "0";
+    document.getElementById("idSimpleAgendaIdx").textContent =
+        gWord[W_FIRST_AGENDA][gLang];
+
+    openTab("noButton", 'idAgendaTab');
 }
 
 function fctPrepareAgenda(s)
@@ -451,7 +449,7 @@ function fctCallPlayerVote()
         if (gVotingPlayer == gSetupNbPlayer)
             gVotingPlayer = 0;
 
-        document.getElementById("idPlayerToVote").textContent = getPlayerFaction(gVotingPlayer,FACTION_NAME) + gWord[W_CAST_VOTE][gLang];
+        document.getElementById("idPlayerToVote").textContent = getPlayerDisplayName(gVotingPlayer) + gWord[W_CAST_VOTE][gLang];
     }
     
     /* all player voted */
@@ -557,6 +555,61 @@ function fctProposal(el, type)
     w3AddClass(el, "displayNone");
     flexFont();
     fctClock('on');
+}
+
+var gSimpleAgendaStep = 1;
+
+function fctSimpleVote(side, amount)
+{
+    var el;
+    if(side == 'for')
+        el = document.getElementById("idSimpleForCount");
+    else
+        el = document.getElementById("idSimpleAgainstCount");
+
+    var val = (el.textContent * 1) + amount;
+    if(val < 0) val = 0;
+    el.textContent = val;
+}
+
+function fctSimpleAgendaNext()
+{
+    if(gSimpleAgendaStep == 1)
+    {
+        gSimpleAgendaStep = 2;
+        document.getElementById("idSimpleForCount").textContent = "0";
+        document.getElementById("idSimpleAgainstCount").textContent = "0";
+        document.getElementById("idSimpleAgendaIdx").textContent =
+            gWord[W_SECOND_AGENDA][gLang];
+    }
+    else
+    {
+        fctAgendaEnd();
+    }
+}
+
+function fctSimpleAgendaBack()
+{
+    if(gSimpleAgendaStep == 2)
+    {
+        gSimpleAgendaStep = 1;
+        document.getElementById("idSimpleForCount").textContent = "0";
+        document.getElementById("idSimpleAgainstCount").textContent = "0";
+        document.getElementById("idSimpleAgendaIdx").textContent =
+            gWord[W_FIRST_AGENDA][gLang];
+    }
+    else
+    {
+        openTab('noButton', 'idStatusTab');
+    }
+}
+
+function fctAgendaBack()
+{
+    if(gAgendaStep == 2)
+        fctPrepareAgenda(1);
+    else
+        openTab('noButton', 'idStatusTab');
 }
 
 function fctAgendaNext()

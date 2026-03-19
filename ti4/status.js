@@ -125,6 +125,22 @@ function fctStatusPhase()
     
 }
 
+function fctStatusBack()
+{
+    if(gStatusStep > 0)
+    {
+        /* Go back from Mecatol Rex page to status checklist */
+        document.getElementById("idStatus2").style.display = "none";
+        document.getElementById("idStatus1").style.display = "block";
+        gStatusStep = 0;
+    }
+    else
+    {
+        /* Go back to action phase */
+        openTab('noButton', 'idTurnOrderTab');
+    }
+}
+
 function fctStatusNext()
 {
     document.getElementById("idStatus1").style.display = "none";
@@ -224,7 +240,9 @@ function fctEndGame()
     }while(target > 0);
         
     // The Emperor frame
-    document.getElementById("idEmperor").src = IMG_FOLDER + "h_" + getPlayerFaction(rank[0], FACTION_SHORTNAME) + ".png";
+    var winnerFaction = gPlayerData[rank[0]][PLAYER_FACTION] * 1;
+    var heroExt = (winnerFaction >= TE_FACTION && winnerFaction < DS_FACTION) || winnerFaction == OBSIDIAN_FACTION ? ".webp" : ".png";
+    document.getElementById("idEmperor").src = IMG_FOLDER + "h_" + getPlayerFaction(rank[0], FACTION_SHORTNAME) + heroExt;
     document.getElementById("idEmperor").style.borderColor = playerColorList[gPlayerData[rank[0]][PLAYER_COLOR]];
     document.getElementById("idEmperor").style.opacity = 1;
     document.getElementById("idStats").style.opacity = 1;

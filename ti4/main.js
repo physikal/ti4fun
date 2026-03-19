@@ -1,5 +1,5 @@
 /* Author: Stephane Demots */
-const cVERSION = (7)*100 + (0);
+const cVERSION = (8)*100 + (0);
 const cOFFLINE = 0;
 
 var gClockRun = 0;
@@ -208,7 +208,14 @@ function fctOneSecond()
     else
       var t = gCurrentPlayerTimer + gPlayerData[strategyList[gActivePlayer][STRATEGY_PLAYER]][PLAYER_CLOCK];
 
-    document.getElementById("idFactoinClk").textContent = fctTransformTime(t);
+    var clkEl = document.getElementById("idFactoinClk");
+    clkEl.textContent = fctTransformTime(t);
+
+    /* Flash timer at 3 minutes */
+    if(gCurrentPlayerTimer >= 180)
+      clkEl.style.color = (gGameDuration % 2) ? "red" : "";
+    else
+      clkEl.style.color = "";
   }
   if(ph == PHASE_GALAXY)
   {
@@ -280,6 +287,7 @@ function fctSaveGame()
         fctSaveItem("gPlayerData" + i + PLAYER_CLOCK, gPlayerData[i][PLAYER_CLOCK]);
         fctSaveItem("gPlayerData" + i + PLAYER_NBSPEAKER, gPlayerData[i][PLAYER_NBSPEAKER]);
         fctSaveItem("gPlayerData" + i + PLAYER_INFLUENCE, gPlayerData[i][PLAYER_INFLUENCE]);
+        fctSaveItem("gPlayerData" + i + PLAYER_NAME, gPlayerData[i][PLAYER_NAME]);
     }
 
     /* Game */
@@ -336,6 +344,7 @@ function fctLoadGame()
         gPlayerData[i][PLAYER_CLOCK] = fctLoadItem("gPlayerData" + i + PLAYER_CLOCK)*1;
         gPlayerData[i][PLAYER_NBSPEAKER] = fctLoadItem("gPlayerData" + i + PLAYER_NBSPEAKER)*1;
         gPlayerData[i][PLAYER_INFLUENCE] = fctLoadItem("gPlayerData" + i + PLAYER_INFLUENCE)*1;
+        gPlayerData[i][PLAYER_NAME] = fctLoadItem("gPlayerData" + i + PLAYER_NAME) || "";
     }
 
     /* Game */

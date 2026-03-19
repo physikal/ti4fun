@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+@theme {
+  --color-hud-bg: oklch(0.15 0.02 250);
+  --color-hud-panel: oklch(0.18 0.025 250 / 0.7);
+  --color-hud-border: oklch(0.5 0.1 190);
+  --color-hud-glow: oklch(0.6 0.15 190);
+  --color-hud-accent: oklch(0.75 0.18 180);
+  --color-hud-text: oklch(0.92 0.01 250);
+  --color-hud-muted: oklch(0.6 0.02 250);
+  --color-hud-danger: oklch(0.65 0.25 25);
+
+  --color-player-black: #1a1a2e;
+  --color-player-blue: #2563eb;
+  --color-player-green: #16a34a;
+  --color-player-purple: #9333ea;
+  --color-player-red: #dc2626;
+  --color-player-yellow: #eab308;
+  --color-player-orange: #ea580c;
+  --color-player-hotpink: #ec4899;
+
+  --color-strat-leadership: #dc2626;
+  --color-strat-diplomacy: #ea580c;
+  --color-strat-politics: #eab308;
+  --color-strat-construction: #16a34a;
+  --color-strat-trade: #06b6d4;
+  --color-strat-warfare: #3b82f6;
+  --color-strat-technology: #2563eb;
+  --color-strat-imperial: #9333ea;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  body {
+    background-color: var(--color-hud-bg);
+    background-image: url("/assets/backgrounds/bluespace.jpg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: var(--color-hud-text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+}
+
+@utility hud-panel {
+  background: var(--color-hud-panel);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-hud-border);
+  border-radius: 0.75rem;
+}
+
+@utility hud-glow {
+  box-shadow: 0 0 8px oklch(0.6 0.15 190 / 0.25),
+    inset 0 0 8px oklch(0.6 0.15 190 / 0.05);
+}
+
+@utility hud-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  min-height: 44px;
+  min-width: 44px;
+  background: oklch(0.2 0.025 250 / 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-hud-border);
+  border-radius: 0.5rem;
+  color: var(--color-hud-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease;
+  touch-action: manipulation;
+  white-space: nowrap;
+}
+
+@utility hud-btn-hover {
+  background: oklch(0.25 0.03 250 / 0.9);
+  border-color: var(--color-hud-accent);
+  box-shadow: 0 0 6px oklch(0.6 0.15 190 / 0.2);
+}
+
+@utility hud-btn-active {
+  transform: scale(0.97);
+}
+
+@utility hud-btn-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+@utility timer-flash {
+  animation: pulse-red 1s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+  0%,
+  100% {
+    color: var(--color-hud-danger);
+    text-shadow: 0 0 10px oklch(0.65 0.25 25 / 0.5);
+  }
+  50% {
+    color: var(--color-hud-text);
+    text-shadow: none;
+  }
+}
+
+@keyframes screen-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@utility screen-fade-in {
+  animation: screen-enter 0.25s ease-out;
+}
