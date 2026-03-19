@@ -134,10 +134,11 @@ export function ActionScreen() {
                 strategySlots.indexOf(slot) === activeSlotIndex;
               const isPassed = slot.status === "passed";
 
+              const stratColor = getStrategyColor(slot.cardIndex);
               return (
                 <div
                   key={i}
-                  className={`hud-panel rounded-lg p-2 transition-all ${
+                  className={`hud-panel rounded-lg p-3 transition-all ${
                     isCurrent
                       ? "border-hud-accent bg-hud-accent/10"
                       : isPassed
@@ -145,12 +146,21 @@ export function ActionScreen() {
                         : ""
                   }`}
                   style={{
-                    borderTopColor: getStrategyColor(slot.cardIndex),
+                    borderTopColor: stratColor,
                     borderTopWidth: "3px",
                   }}
                 >
-                  <div className="text-[10px] font-bold text-center mb-1 text-hud-muted">
-                    {getStrategyName(slot.cardIndex, locale)}
+                  <div className="flex justify-center mb-2">
+                    <span
+                      className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: stratColor + "25",
+                        color: stratColor,
+                        border: `1px solid ${stratColor}50`,
+                      }}
+                    >
+                      {getStrategyName(slot.cardIndex, locale)}
+                    </span>
                   </div>
                   <PlayerBadge
                     player={player}
