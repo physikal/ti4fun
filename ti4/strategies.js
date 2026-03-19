@@ -3,6 +3,8 @@
 
 // global variables
 var gActivePlayer = 0;
+var gActionHistory = [];
+var gLastStrategyPick = -1;
 var gPlayerChooseCount = 0;
 
 var gTurnCounter = 0;
@@ -189,8 +191,7 @@ function fctShowSpeaker(w)
 function fctRandomSpeaker()
 {
     gSpeakerPlayerIdx = (Math.floor(Math.random() * gSetupNbPlayer));
-
-    fctCloseSpeaker();
+    document.getElementById("idConfirmSpeaker").disabled = false;
 }
 
 function fctPickPlayer(Faction)
@@ -204,13 +205,19 @@ function fctPickPlayer(Faction)
     if(document.getElementById("idSetSpeaker").style.display == "block")
     {
         gSpeakerPlayerIdx = p;
-        fctCloseSpeaker();
+        document.getElementById("idConfirmSpeaker").disabled = false;
     }
     /* Telepathic */
     else
     {
         fctSetTelephatic(p);
     }
+}
+
+function fctConfirmSpeaker()
+{
+    document.getElementById("idConfirmSpeaker").disabled = true;
+    fctCloseSpeaker();
 }
 
 function fctCloseSpeaker()
@@ -268,7 +275,7 @@ function fctInitStrategyPhase()
     gNaaluStrategy = 255;
     gbEndOfStrategyPhase = false;
 
-    document.getElementById("idPlayerToChoose").textContent = getPlayerFaction(gActivePlayer,FACTION_NAME) + gWord[W_SELECT_STRATEGY][gLang];
+    document.getElementById("idPlayerToChoose").textContent = getPlayerDisplayName(gActivePlayer) + gWord[W_SELECT_STRATEGY][gLang];
 
     var classStrategyFrame = document.getElementsByClassName("classStrategyFrame");
     var classStrategyNameText = document.getElementsByClassName("classStrategyNameText");
@@ -320,6 +327,17 @@ function fctInitStrategyPhase()
         clCard[i].style.display = "none";
     }
 
+    /* Hide faction ability buttons */
+    document.getElementById("idFirmamentTransformCard").style.display =
+        "none";
+    document.getElementById("idRalNelUnpassCard").style.display =
+        "none";
+
+    /* Hide strategy undo button */
+    gLastStrategyPick = -1;
+    gActionHistory = [];
+    document.getElementById("idStrategyBack").style.display = "none";
+
     /* reset Naalu */
     document.getElementById("idNaaluFr").style.display = "none";
     document.getElementById("idNaaluFactionChooser").textContent = factionList[NAALU_FACTION][FACTION_NAME] ;
@@ -352,6 +370,9 @@ function fctStrategyFrame (evt)
     {
         fctLockSpeaker();
 
+        /* Track for undo */
+        gLastStrategyPick = evt.cellIndex;
+
         /* Show faction name and icon */
         fctAssignStrategy(evt.cellIndex, gActivePlayer)
 
@@ -359,6 +380,10 @@ function fctStrategyFrame (evt)
         evt.className += "Selected";
 
         gPlayerChooseCount++;
+
+        /* Show undo button */
+        document.getElementById("idStrategyBack").style.display =
+            "inline";
 
         gPlayerData[gActivePlayer][PLAYER_CLOCK] += gCurrentPlayerTimer;
         gCurrentPlayerTimer = 0;
@@ -389,7 +414,7 @@ function fctStrategyFrame (evt)
                 gActivePlayer = 0;
 
             /* Update instruction */
-            document.getElementById("idPlayerToChoose").textContent = getPlayerFaction(gActivePlayer,FACTION_NAME) + gWord[W_SELECT_STRATEGY][gLang];
+            document.getElementById("idPlayerToChoose").textContent = getPlayerDisplayName(gActivePlayer) + gWord[W_SELECT_STRATEGY][gLang];
         }
     }
     /* Swap effect */
@@ -530,6 +555,74 @@ function fctSetTelephatic(p)
 
     document.getElementById("idTelepathic").style.display = "none";
     document.getElementById("idStrategyEnd").style.display = "block";
+}
+
+function fctStrategyBack()
+{
+    if(gLastStrategyPick < 0 || gPlayerChooseCount <= 0) return;
+
+    var i = gLastStrategyPick;
+
+    /* Unassign the strategy */
+    var c = document.getElementsByClassName("classFactionChooser");
+    c[i].textContent = "";
+    var el = document.getElementsByClassName("classFactionIcon");
+    el[i].src = "";
+
+    /* Revert frame class from Selected back to Frame */
+    var stratFrame = document.getElementById("idStrategyTable")
+        .getElementsByTagName("td");
+    stratFrame[i].className =
+        stratFrame[i].className.replace("Selected", "");
+
+    /* Re-show TG if it was hidden */
+    var tg = document.getElementsByClassName("clTrade");
+    if(strategyList[i][STRATEGY_TG] > 0)
+    {
+        tg[i].className =
+            tg[i].className.replace("clOpacity0", "clOpacity1");
+    }
+
+    /* Reset strategy state */
+    strategyList[i][STRATEGY_PLAYER] = 255;
+    strategyList[i][STRATEGY_STATUS] = STRATEGY_AVAILABLE;
+
+    gPlayerChooseCount--;
+
+    /* Go back to previous player */
+    if(gbEndOfStrategyPhase)
+    {
+        gbEndOfStrategyPhase = false;
+        var clStratEndButton =
+            document.getElementsByClassName("clStratEndButton");
+        for(var j = 0; j < clStratEndButton.length; j++)
+            clStratEndButton[j].style.display = "none";
+    }
+    else
+    {
+        gActivePlayer--;
+        if(gActivePlayer < 0)
+            gActivePlayer = gSetupNbPlayer - 1;
+    }
+
+    document.getElementById("idPlayerToChoose").textContent =
+        getPlayerDisplayName(gActivePlayer) +
+        gWord[W_SELECT_STRATEGY][gLang];
+
+    /* Hide undo button (only one level of undo) */
+    gLastStrategyPick = -1;
+    document.getElementById("idStrategyBack").style.display = "none";
+
+    /* Re-show the faction in the chooser list */
+    var clSetFaction = document.getElementsByClassName("clSetFaction");
+    var factionName =
+        factionList[gPlayerData[gActivePlayer][PLAYER_FACTION]]
+            [FACTION_NAME];
+    for(var j = 0; j < clSetFaction.length; j++)
+    {
+        if(clSetFaction[j].textContent == factionName)
+            w3AddClass(clSetFaction[j], "show");
+    }
 }
 
 function fctEndStrategyPhase()
@@ -687,6 +780,9 @@ function fctInitActionPhase()
 
     fctDisplayAll("StratButton", "");
 
+    /* Show faction ability buttons if relevant factions are in game */
+    fctShowFactionAbilities();
+
     flexFont();
 
     /* Set first player */
@@ -695,6 +791,31 @@ function fctInitActionPhase()
         i++;
     gActivePlayer = i-1; /* because real player will be loaded on incoming call of FctNextPlayerAction */
     gCurrentPlayerTimer = 0;
+}
+
+function fctShowFactionAbilities()
+{
+    /* Hide first in case of reload */
+    document.getElementById("idFirmamentTransformCard")
+        .style.display = "none";
+    document.getElementById("idRalNelUnpassCard")
+        .style.display = "none";
+
+    for(var i = 0; i < gSetupNbPlayer; i++)
+    {
+        var f = gPlayerData[i][PLAYER_FACTION] * 1;
+        /* Show transform only if still The Firmament */
+        if(f == FIRMAMENT_FACTION)
+        {
+            document.getElementById(
+                "idFirmamentTransformCard").style.display = "inline";
+        }
+        if(f == RAL_NEL_FACTION)
+        {
+            document.getElementById(
+                "idRalNelUnpassCard").style.display = "inline";
+        }
+    }
 }
 
 function fctSetActionButtons(ply)
@@ -885,6 +1006,15 @@ function fctResolveAction()
     gPlayerData[strategyList[gActivePlayer][STRATEGY_PLAYER]][PLAYER_CLOCK] += gCurrentPlayerTimer;
     gCurrentPlayerTimer = 0;
 
+    /* Save snapshot for back button */
+    gActionHistory.push({
+        activePlayer: gActivePlayer,
+        strategyStatuses: strategyList.map(function(s) {
+            return s[STRATEGY_STATUS];
+        }),
+        roundCounter: gRoundCounter
+    });
+
     FctNextPlayerAction();
 }
 
@@ -945,7 +1075,8 @@ function FctNextPlayerAction()
 
         /* Update sentence */
         document.getElementById("idPlayerToChoose").textContent = "";
-        document.getElementById("idFactionFocus").textContent = getPlayerFaction(strategyList[gActivePlayer][STRATEGY_PLAYER],FACTION_NAME);
+        var activePlayerIdx = strategyList[gActivePlayer][STRATEGY_PLAYER];
+        document.getElementById("idFactionFocus").textContent = getPlayerDisplayName(activePlayerIdx);
         document.getElementById("idFactionIcon").style.backgroundImage = 'url('+factionList[gPlayerData[strategyList[gActivePlayer][STRATEGY_PLAYER]][PLAYER_FACTION]][FACTION_ICON]+')';
 
         var color = playerColorList[gPlayerData[strategyList[gActivePlayer][STRATEGY_PLAYER]][PLAYER_COLOR]];
@@ -991,5 +1122,261 @@ function fctRstFrames()
     }
 }
 
+/* Back button: revert to previous player in action phase */
+function fctActionBack()
+{
+    if(gActionHistory.length == 0) return;
 
+    var snapshot = gActionHistory.pop();
+
+    /* Remove current highlight */
+    var cur = document.getElementsByClassName(
+        "classStrategyFrameCurrent");
+    if(cur.length > 0)
+        cur[0].className =
+            cur[0].className.replace("Current", "Active");
+
+    /* Restore strategy statuses */
+    for(var i = 0; i < strategyList.length; i++)
+    {
+        var oldStatus = strategyList[i][STRATEGY_STATUS];
+        var newStatus = snapshot.strategyStatuses[i];
+        strategyList[i][STRATEGY_STATUS] = newStatus;
+
+        /* Restore passed->active frame visuals */
+        if(oldStatus == STRATEGY_PASSED &&
+           newStatus != STRATEGY_PASSED &&
+           strategyList[i][STRATEGY_PLAYER] < 8)
+        {
+            var f;
+            if(i > 0)
+                f = document.getElementById(
+                    strategyList[i][STRATEGY_NAME]);
+            else
+                f = document.getElementById("idNaaluFr");
+            if(f)
+            {
+                f.className =
+                    f.className.replace("Selected", "Active");
+                f.style.backgroundImage = '';
+            }
+        }
+    }
+
+    /* Restore player and round */
+    gActivePlayer = snapshot.activePlayer;
+    gRoundCounter = snapshot.roundCounter;
+    gCurrentPlayerTimer = 0;
+
+    /* Re-highlight restored player's frame */
+    var stratFrame;
+    if(gActivePlayer != 0)
+        stratFrame = document.getElementById(
+            strategyList[gActivePlayer][STRATEGY_NAME]);
+    else
+        stratFrame = document.getElementById("idNaaluFr");
+    if(stratFrame)
+        stratFrame.className =
+            stratFrame.className.replace("Active", "Current");
+
+    /* Update UI */
+    var activePlayerIdx =
+        strategyList[gActivePlayer][STRATEGY_PLAYER];
+    document.getElementById("idFactionFocus").textContent =
+        getPlayerDisplayName(activePlayerIdx);
+    document.getElementById("idFactionIcon")
+        .style.backgroundImage = 'url(' +
+        factionList[gPlayerData[activePlayerIdx][PLAYER_FACTION]]
+            [FACTION_ICON] + ')';
+
+    var color =
+        playerColorList[gPlayerData[activePlayerIdx][PLAYER_COLOR]];
+    document.getElementById("idPlayerFocus")
+        .style.borderColor = color;
+
+    /* Reset links */
+    var clLink = document.getElementsByClassName("clLink");
+    for(var j = 0; j < clLink.length; j++)
+        clLink[j].style.opacity = 0;
+    clLink[gActivePlayer].style.opacity = 1;
+    clLink[gActivePlayer].style.backgroundColor = color;
+
+    fctSetActionButtons(gActivePlayer);
+    fctSaveGame();
+    fctClock('on');
+}
+
+/* Firmament -> Obsidian transformation */
+function fctTransformFirmament()
+{
+    var i;
+    var firmamentPlayer = -1;
+
+    /* Find which player is The Firmament */
+    for(i = 0; i < gSetupNbPlayer; i++)
+    {
+        if(gPlayerData[i][PLAYER_FACTION] == FIRMAMENT_FACTION)
+        {
+            firmamentPlayer = i;
+            break;
+        }
+    }
+
+    if(firmamentPlayer == -1) return;
+
+    /* Transform to The Obsidian */
+    gPlayerData[firmamentPlayer][PLAYER_FACTION] = OBSIDIAN_FACTION;
+
+    /* Update all UI references */
+    fctUpdateFactionUI(firmamentPlayer);
+
+    /* Hide the transform button */
+    document.getElementById("idFirmamentTransformCard").style.display =
+        "none";
+
+    fctSaveGame();
+}
+
+/* Update all UI elements for a player's faction */
+function fctUpdateFactionUI(playerIdx)
+{
+    var newFactionIdx = gPlayerData[playerIdx][PLAYER_FACTION];
+    var newName = factionList[newFactionIdx][FACTION_NAME];
+    var newIcon = factionList[newFactionIdx][FACTION_ICON];
+    var newShort = factionList[newFactionIdx][FACTION_SHORTNAME];
+    var i;
+
+    /* Update game table player frames */
+    var clPlayerFrame =
+        document.getElementById("idGameTable")
+        .getElementsByClassName("classSetPlayerFrame");
+    var clPlayerName =
+        document.getElementById("idGameTable")
+        .getElementsByClassName("classPlayerRaceName");
+
+    if(playerIdx < clPlayerFrame.length)
+    {
+        clPlayerName[playerIdx].textContent = newName;
+        clPlayerFrame[playerIdx].style.backgroundImage =
+            'url(' + newIcon + ')';
+    }
+
+    /* Update VP bar icons */
+    var clVPFactionIcon =
+        document.getElementsByClassName("clVPFactionIcon");
+    if(playerIdx < clVPFactionIcon.length)
+    {
+        clVPFactionIcon[playerIdx].style.backgroundImage =
+            'url(' + newIcon + ')';
+    }
+
+    /* Update influence bar icons */
+    var clInfluFactionIcon =
+        document.getElementsByClassName("clInfluFactionIcon");
+    if(playerIdx < clInfluFactionIcon.length)
+    {
+        clInfluFactionIcon[playerIdx].style.backgroundImage =
+            'url(' + newIcon + ')';
+    }
+
+    /* Update strategy frame icons if this player has a strategy */
+    var clFactionChooser =
+        document.getElementsByClassName("classFactionChooser");
+    var clFactionIcon =
+        document.getElementsByClassName("classFactionIcon");
+    for(i = 0; i < strategyList.length; i++)
+    {
+        var stratPlayer = strategyList[i][STRATEGY_PLAYER];
+        if(stratPlayer == playerIdx ||
+           stratPlayer == (playerIdx + STRATEGY_SECONDPICK))
+        {
+            clFactionChooser[i].textContent = newName;
+            clFactionIcon[i].src = newIcon;
+        }
+    }
+
+    /* Update active player focus if it's this player */
+    if(fctGetPhase() == PHASE_ACTION &&
+       strategyList[gActivePlayer] &&
+       strategyList[gActivePlayer][STRATEGY_PLAYER] == playerIdx)
+    {
+        document.getElementById("idFactionFocus").textContent =
+            newName;
+        document.getElementById("idFactionIcon")
+            .style.backgroundImage = 'url(' + newIcon + ')';
+    }
+
+    /* Update speaker token if this player is speaker */
+    if(gSpeakerPlayerIdx == playerIdx)
+    {
+        document.getElementById("idSpeakerOwner").textContent =
+            newShort;
+    }
+}
+
+/* Ral Nel Hero: Signal Intrusion - unpass a player */
+function fctRalNelUnpass()
+{
+    var i;
+    var ralNelPlayer = -1;
+
+    /* Find which player is Ral Nel */
+    for(i = 0; i < gSetupNbPlayer; i++)
+    {
+        if(gPlayerData[i][PLAYER_FACTION] == RAL_NEL_FACTION)
+        {
+            ralNelPlayer = i;
+            break;
+        }
+    }
+
+    if(ralNelPlayer == -1) return;
+
+    /* Find their passed strategy and reactivate it */
+    for(i = 0; i < strategyList.length; i++)
+    {
+        if(strategyList[i][STRATEGY_PLAYER] == ralNelPlayer &&
+           strategyList[i][STRATEGY_STATUS] == STRATEGY_PASSED)
+        {
+            strategyList[i][STRATEGY_STATUS] = STRATEGY_PLAYED;
+
+            /* Re-show the strategy frame as active */
+            var stratFrame;
+            if(i > 0)
+                stratFrame =
+                    document.getElementById(
+                        strategyList[i][STRATEGY_NAME]);
+            else
+                stratFrame =
+                    document.getElementById("idNaaluFr");
+
+            stratFrame.className =
+                stratFrame.className.replace("Selected", "Active");
+            stratFrame.style.backgroundImage = '';
+
+            break;
+        }
+    }
+
+    /* Also reactivate second strategy in <=4 player games */
+    if(gSetupNbPlayer <= 4)
+    {
+        for(i = 0; i < strategyList.length; i++)
+        {
+            var sp = strategyList[i][STRATEGY_PLAYER];
+            if(sp == (ralNelPlayer + STRATEGY_SECONDPICK) &&
+               strategyList[i][STRATEGY_STATUS] == STRATEGY_PASSED)
+            {
+                strategyList[i][STRATEGY_STATUS] = STRATEGY_PLAYED;
+                break;
+            }
+        }
+    }
+
+    /* Hide the unpass button after use (hero is one-time) */
+    document.getElementById("idRalNelUnpassCard").style.display =
+        "none";
+
+    fctSaveGame();
+}
 

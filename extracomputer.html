@@ -340,6 +340,17 @@
                 <div id="idTmpColor" class="clSetColor show" onclick="fctSelectItem(this)"></div>
             </div>
             <br/>
+            <h3 class="clModal classCenter _en">Player Name</h3>
+            <h3 class="clModal classCenter _fr">Nom du joueur</h3>
+            <h3 class="clModal classCenter _de">Spielername</h3>
+            <h3 class="clModal classCenter _ru">Имя игрока</h3>
+            <h3 class="clModal classCenter _sp">Nombre del Jugador</h3>
+            <h3 class="clModal classCenter _cn">玩家名称</h3>
+            <h3 class="clModal classCenter _pl">Nazwa gracza</h3>
+            <div class="classCenter">
+                <input id="idPlayerNameInput" type="text" class="clPlayerNameInput" maxlength="20" placeholder="Optional">
+            </div>
+            <br/>
             <h3 class="clModal classCenter _en">Faction</h3>
             <h3 class="clModal classCenter _fr">Faction</h3>
             <h3 class="clModal classCenter _de">Faction</h3>
@@ -563,7 +574,7 @@
       <div class="clClkBar clNavItem">
         <span class="clClk ">
           <span id="idGameDuration" class= "clTime" onclick="fctClock('toggle')">0</span>
-          <div class="progress" onclick="fctDecision()">
+          <div class="progress" onclick="fctDecision()" style="display:none">
             <div id="idDecisionTimer" class="progress-bar" role="progressbar" style="width:70%"></div>
             <div id="idDecisionValue" class= "progressValue">70</div>
           </div>
@@ -587,6 +598,7 @@
     <div id="idTurnOrderTab" class="tabcontent">
         <div  class="classCenter">
             <h2 id="idPlayerToChoose" type="text" value="t"></h2>
+            <button id="idStrategyBack" class="clBackBtn" style="display:none" onclick="fctStrategyBack()"><span class="_en">Undo</span><span class="_fr">Annuler</span><span class="_de">Rückgängig</span><span class="_ru">Отмена</span><span class="_sp">Deshacer</span><span class="_cn">撤销</span><span class="_pl">Cofnij</span></button>
         </div>
 <!--        <div class="clStrategyTimer">
             <div id="idStrategyTimer" class="clStrategyTimerFill"></div>
@@ -745,8 +757,31 @@
                         &nbsp; &nbsp;
                         <span id="idSpin"class="loader">&nbsp;</span>
                     </span>
-                    <button id="idActionEnd" class="StratButton clFlexGrow1" onclick="fctResolveAction()"><span class="_en">Next player</span><span class="_fr">Joueur suivant</span><span class="_de">Nächster Spieler</span><span class="_ru">Следующий игрок</span><span class="_sp">Siguiente Jugador</span><span class="_cn">下一玩家</span><span class="_pl">Następny gracz</span></button></div>
+                    <div class="clActionBtnRow">
+                        <button id="idActionBack" class="StratButton clFlexGrow1 clBackBtn" onclick="fctActionBack()"><span class="_en">Back</span><span class="_fr">Retour</span><span class="_de">Zurück</span><span class="_ru">Назад</span><span class="_sp">Volver</span><span class="_cn">返回</span><span class="_pl">Wróć</span></button>
+                        <button id="idActionEnd" class="StratButton clFlexGrow1" onclick="fctResolveAction()"><span class="_en">Next player</span><span class="_fr">Joueur suivant</span><span class="_de">Nächster Spieler</span><span class="_ru">Следующий игрок</span><span class="_sp">Siguiente Jugador</span><span class="_cn">下一玩家</span><span class="_pl">Następny gracz</span></button>
+                    </div></div>
             </div>
+        </div>
+        <div class="classCenter clFactionAbilities">
+            <button id="idFirmamentTransformCard" class="clFactionAbilityBtn" onclick="fctTransformFirmament()">
+                <span class="_en">Transform to The Obsidian</span>
+                <span class="_fr">Transformation en L'Obsidienne</span>
+                <span class="_de">Transformation zu The Obsidian</span>
+                <span class="_ru">Превращение в Обсидиан</span>
+                <span class="_sp">Transformar a The Obsidian</span>
+                <span class="_cn">转变为黑曜石</span>
+                <span class="_pl">Transformacja w Obsydian</span>
+            </button>
+            <button id="idRalNelUnpassCard" class="clFactionAbilityBtn" onclick="fctRalNelUnpass()">
+                <span class="_en">Signal Intrusion (Ral Nel Hero)</span>
+                <span class="_fr">Signal Intrusion (Héros Ral Nel)</span>
+                <span class="_de">Signal Intrusion (Ral Nel Held)</span>
+                <span class="_ru">Вмешательство (Герой Рал Нел)</span>
+                <span class="_sp">Intrusión de Señal (Héroe Ral Nel)</span>
+                <span class="_cn">信号入侵 (拉尔·奈尔英雄)</span>
+                <span class="_pl">Intruzja sygnału (Bohater Ral Nel)</span>
+            </button>
         </div>
         <br/>
         <div class="classCenter">
@@ -770,6 +805,7 @@
         </div>
         <div class="classCenter">
             <button id="idRandomSpeaker" class="classCenter clMarginAutoOnly" onclick="fctRandomSpeaker()"><span class="_en">Random</span><span class="_fr">Aléatoire</span><span class="_de">Zufall</span><span class="_ru">Случайно</span><span class="_sp">Aleatorio</span><span class="_cn">随机设置议长</span><span class="_pl">Losowo</span></button>
+            <button id="idConfirmSpeaker" class="classCenter clMarginAutoOnly" onclick="fctConfirmSpeaker()" disabled><span class="_en">Confirm</span><span class="_fr">Confirmer</span><span class="_de">Bestätigen</span><span class="_ru">Подтвердить</span><span class="_sp">Confirmar</span><span class="_cn">确认</span><span class="_pl">Potwierdź</span></button>
         </div>
       </div>
     </div>
@@ -963,9 +999,22 @@
             <div id="idMecatolFree2" class="card-container" onclick="fctMecatolRex(2)"><img src="ti4/img/mrex3.png"></div>
 
             <h2 id="idCustodians" class="classCenter" >...</h2>
+            <br/>
+            <div class="classCenter">
+                <button class="clMecatolToggle" onclick="fctMecatolRex(2)">
+                    <span class="_en">Toggle Mecatol Rex Status</span>
+                    <span class="_fr">Basculer Mecatol Rex</span>
+                    <span class="_de">Mecatol Rex umschalten</span>
+                    <span class="_ru">Переключить Мекатол Рекс</span>
+                    <span class="_sp">Cambiar estado Mecatol Rex</span>
+                    <span class="_cn">切换迈卡托雷克斯状态</span>
+                    <span class="_pl">Przełącz status Mecatol Rex</span>
+                </button>
+            </div>
         </div>
 
         <div class="classCenter">
+            <button class="clMarginAutoOnly clBackBtn" onclick="fctStatusBack()"><span class="_en">Back</span><span class="_fr">Retour</span><span class="_de">Zurück</span><span class="_ru">Назад</span><span class="_sp">Volver</span><span class="_cn">返回</span><span class="_pl">Wróć</span></button>
             <button id="idStatusNext" class="clMarginAutoOnly" onclick="fctStatusNext()"><span class="_en">Next</span><span class="_fr">Suivant</span><span class="_de">Nächster</span><span class="_ru">Далее</span><span class="_sp">Siguiente</span><span class="_cn">下一个</span><span class="_pl">Dalej</span></button>
         </div>
     </div>
@@ -986,19 +1035,31 @@
             <button class="clVoteType" onclick="fctAgendaNext()"><span class="_en">Skip</span><span class="_fr">Passer</span><span class="_de">Nächster</span><span class="_ru">Пропустить</span><span class="_sp">Pasar</span><span class="_cn">跳过</span><span class="_pl">Pomiń</span></button>
         </div>
         <div id="idAgendaStepPage">
-          <p class="clh3 classCenter _en">Influence counters</p>
-          <p class="clh3 classCenter _fr">Compteurs d'influence</p>
-          <!-- TODO Missing translations !! -->
-          <p class="clh3 classCenter _de">Influence counters</p>
-          <!-- TODO Missing translations !! -->
-          <p class="clh3 classCenter _ru">Influence counters</p>
-          <!-- check translations !! -->
-          <p class="clh3 classCenter _sp">Calcular Influencia</p>
-          <p class="clh3 classCenter _cn">影响力指示器</p>
-          <p class="clh3 classCenter _pl">Liczniki wpływu</p>
-          <!-- check translations !! -->
+          <h2 id="idSimpleAgendaIdx" class="classCenter">First Agenda</h2>
           <br/>
-          <div id="idInfluenceBar" class="clInfluenceBar">
+          <div class="clSimpleVoteContainer">
+              <div class="clSimpleVoteColumn clSimpleVoteFor">
+                  <h2 class="_en">For</h2><h2 class="_fr">Pour</h2><h2 class="_de">Dafür</h2><h2 class="_ru">За</h2><h2 class="_sp">A Favor</h2><h2 class="_cn">赞同</h2><h2 class="_pl">Za</h2>
+                  <span id="idSimpleForCount" class="clSimpleVoteCount">0</span>
+                  <div>
+                      <button class="clSimpleVoteBtn" onclick="fctSimpleVote('for',1)">+1</button>
+                      <button class="clSimpleVoteBtn" onclick="fctSimpleVote('for',5)">+5</button>
+                      <button class="clSimpleVoteBtn" onclick="fctSimpleVote('for',-1)">-1</button>
+                  </div>
+              </div>
+              <div class="clSimpleVoteColumn clSimpleVoteAgainst">
+                  <h2 class="_en">Against</h2><h2 class="_fr">Contre</h2><h2 class="_de">Dagegen</h2><h2 class="_ru">Против</h2><h2 class="_sp">En Contra</h2><h2 class="_cn">反对</h2><h2 class="_pl">Przeciw</h2>
+                  <span id="idSimpleAgainstCount" class="clSimpleVoteCount">0</span>
+                  <div>
+                      <button class="clSimpleVoteBtn" onclick="fctSimpleVote('against',1)">+1</button>
+                      <button class="clSimpleVoteBtn" onclick="fctSimpleVote('against',5)">+5</button>
+                      <button class="clSimpleVoteBtn" onclick="fctSimpleVote('against',-1)">-1</button>
+                  </div>
+              </div>
+          </div>
+          <br/>
+          <!-- Legacy influence bar hidden -->
+          <div id="idInfluenceBar" class="clInfluenceBar" style="display:none">
 
             <span id="idInflu0" class="clInfluPlayerCase">
                 <label class="clInfluFactionIcon"><label class="clInfluFactionName">Sol</label></label>
@@ -1113,7 +1174,10 @@
                 <h3 class="clOverable">6. Rozpatrzenie wyniku głosowania</h3>
             </div>
             <br />
-            <button class="clVoteType" onclick="fctAgendaEnd()"><span class="_en">Next</span><span class="_fr">Suivant</span><span class="_de">Nächster</span><span class="_ru">Далее</span><span class="_sp">Siguiente</span><span class="_cn">继续</span><span class="_pl">Dalej</span></button>
+            <div class="classCenter">
+                <button class="clBackBtn clMarginAutoOnly" onclick="fctSimpleAgendaBack()"><span class="_en">Back</span><span class="_fr">Retour</span><span class="_de">Zurück</span><span class="_ru">Назад</span><span class="_sp">Volver</span><span class="_cn">返回</span><span class="_pl">Wróć</span></button>
+                <button class="clVoteType" onclick="fctSimpleAgendaNext()"><span class="_en">Next Agenda</span><span class="_fr">Projet suivant</span><span class="_de">Nächste Agenda</span><span class="_ru">Следующая повестка</span><span class="_sp">Siguiente Agenda</span><span class="_cn">下一个议程</span><span class="_pl">Następne zagadnienie</span></button>
+            </div>
         </div>
     </div>
 
@@ -1485,6 +1549,7 @@
             <span id="idKeyConfirm" class="classNumKey" onclick="FctKeypadInput(255)"><span class="_en">Confirm</span><span class="_fr">Confirmer</span><span class="_de">Bestätigen</span><span class="_ru">Подтвердить</span><span class="_sp">Confirmar</span><span class="_cn">确认</span><span class="_pl">Zatwierdź</span></span>
         </div>
         <div class="classCenter">
+            <button class="clMarginAutoOnly clBackBtn" onclick="fctAgendaBack()"><span class="_en">Back</span><span class="_fr">Retour</span><span class="_de">Zurück</span><span class="_ru">Назад</span><span class="_sp">Volver</span><span class="_cn">返回</span><span class="_pl">Wróć</span></button>
             <button id="idAgendaNext" class="clMarginAutoOnly" onclick="fctAgendaNext()"><span class="_en">Next</span><span class="_fr">Suivant</span><span class="_de">Nächster</span><span class="_ru">Далее</span><span class="_sp">Siguiente</span><span class="_cn">继续</span><span class="_pl">Dalej</span></button>
         </div>
     </div>
@@ -1650,43 +1715,8 @@
     <div id="idModalOptions" class="modal">
         <div class="modalcontent">
             <h2 class="classCenter">Options</h2>
-            <div class="clLine">
-                <span class="clModalText clBold _en">Use the Victory Point meter top bar</span>
-                <span class="clModalText clBold _fr">Utiliser les compteurs de PV</span>
-                <span class="clModalText clBold _de">Verwende die Siegpunktleiste am oberen Rand </span>
-                <span class="clModalText clBold _ru">Использовать счетчик победных очков в верхней панели</span>
-                <span class="clModalText clBold _sp">Utilizar el contador de Puntos de Victoria</span>
-                <span class="clModalText clBold _cn">顶端显示玩家分数</span>
-                <span class="clModalText clBold _pl">Użyj licznika punktów zwycięstwa na górnym pasku</span>
-                <label class="switch clFloatRight">
-                    <input onclick="fctShowVPBar(this)" type="checkbox" checked>
-                    <span class="checker"></span>
-                </label>
-            </div>
-            <br />
-            <br />
-            <div class="clLine">
-                <div class="clModalText">
-                    <span class="clBold _en">Victory Points limit</span>
-                    <span class="clBold _fr">Limite de Points de Victoire</span>
-                    <span class="clBold _de">Siegpunktlimit</span>
-                    <span class="clBold _ru">Лимит победных очков</span>
-                    <span class="clBold _sp">Límite de Puntos de Victoria</span>
-                    <span class="clBold _cn">选择游戏目标分数</span>
-                    <span class="clBold _pl">Limit Punktów Zwycięstwa</span>
-                    <input id="idOptionVPWin" class="clFloatRight clNumberInput" type="number" min="0" max="20" value="10" />
-                    <br />
-                    <span class="_en">End game button will appear when reaching the limit</span>
-                    <span class="_fr">Atteindre la limite affiche le bouton de fin de partie</span>
-                    <span class="_de">End game button will appear when reaching the limit</span>
-                    <span class="_ru">Кнопка "Закончить игру" появится после достижения лимита победных очков</span>
-                    <span class="_sp">El botón de Fin de Juego aparecerá al alcanzar el límite</span>
-                    <span class="_cn">结束游戏按钮会在目标分达到后结束</span>
-                    <span class="_pl">Przycisk "Koniec gry" pojawia się po osiągnięciu limitu punktów zwycięstwa</span>
-                </div>
-            </div>
-            <br />
-            <br />
+            <!-- VP limit hidden but kept for save/load compatibility -->
+            <input id="idOptionVPWin" type="hidden" value="10" />
             <div class="clLine">
                 <span class="clModalText clBold _en">Full screen </span>
                 <span class="clModalText clBold _fr">Plein écran</span>
@@ -1761,7 +1791,7 @@
                     <span class="clBold _cn">每轮都重设玩家计时器</span>
                     <span class="clBold _pl">Licznik czasu gracza jest resetowany co turę</span>
                     <label id="idOptionPlayerTimer" class="switch clFloatRight">
-                        <input id="idPlyerTimerCheck" type="checkbox">
+                        <input id="idPlyerTimerCheck" type="checkbox" checked>
                         <span class="checker"></span>
                     </label>
                     <br />
@@ -1775,57 +1805,10 @@
                     <br />
                 </div>
             </div>
-            <br />
-            <br />
-            <div class="clLine">
-                <div class="clModalText">
-                    <span class="clBold _en">Decision bar (seconds)</span>
-                    <span class="clBold _fr">Barre de décision(secondes)</span>
-                    <span class="clBold _de">Decision timer (seconds)</span>
-                    <span class="clBold _ru">Decision timer (seconds)</span>
-                    <span class="clBold _sp">Decision timer (seconds)</span>
-                    <span class="clBold _cn">行动倒计时 (秒)</span>
-                    <span class="clBold _pl">Czas na podjęcie decyzji (w sekundach)</span>
-                    <input id="idOptionDecisionTimer" class="clFloatRight clNumberInput" type="number" min="20" max="180" value="90" />
-                    <br />
-                    <span class="_en">Progress bar to prevent analysis-paralysis. Repeats itself or click to reset.</span>
-                    <span class="_fr">Barre de progrès pour empécher l'analysis-paralysis. Periodique ou cliquer pour relancer.</span>
-                    <span class="_de">Progress bar to prevent analysis-paralysis. Repeats itself or click to reset.</span>
-                    <span class="_ru">Progress bar to prevent analysis-paralysis. Repeats itself or click to reset.</span>
-                    <span class="_sp">Progress bar to prevent analysis-paralysis. Repeats itself or click to reset.</span>
-                    <span class="_cn">防止长考. 循环计时/点击重置.</span>
-                    <span class="_pl">Pasek postępu, aby zapobiec paraliżowi decyzyjnemu. Powtarza się sam lub kliknij, aby zresetować.</span>
-                    <br />
-                </div>
-            </div>
-            <br />
-            <br />
-            <div class="clLine">
-                <div class="clModalText">
-                    <span class="clBold _en">During Agenda phase, show detailed voting steps instead of vote counter</span>
-                    <span class="clBold _fr">Afficher les étapes de la phase Projet au lieu du compteur de votes</span>
-                    <span class="clBold _de">Show detailed voting steps during Agenda phase instead of vote counter</span>
-                    <span class="clBold _ru">Show detailed voting steps during Agenda phase instead of vote counter</span>
-                    <span class="clBold _sp">Durante la fase de Concejo Galáctico, muestra una guia detallada del proceso, en lugar de un contador de votos</span>
-                    <span class="clBold _cn">议会阶段，不显示计票器而改为显示投票详细步骤</span>
-                    <span class="clBold _pl">Pokaż szczegółowe kroki głosowania podczas Fazy Dyplomacji zamiast licznika głosów</span>
-                    <label id="idOptionAgendaPage" class="switch clFloatRight">
-                        <input id="idAgendaPageCheck" type="checkbox" checked>
-                        <span class="checker"></span>
-                    </label>
-                    <br />
-                    <span class="_en">Uncheck to use the old and complex voting system.</span>
-                    <span class="_fr">Désactiver pour utiliser l'ancien systeme complexe de votes.</span>
-                    <span class="_de">Uncheck to use the old and complex voting system.</span>
-                    <!-- TODO Missing translations !! -->
-                    <span class="_ru">Uncheck to use the old and complex voting system.</span>
-                    <!-- TODO Missing translations !! -->
-                    <span class="_sp">Si no esta marcado, se utiliza el viejo y complejo sistema de votación.</span>
-                    <span class="_cn">取消选择来使用老版复杂投票系统.</span>
-                    <span class="_pl">Odznacz, aby korzystać ze starego i skomplikowanego systemu głosowania.</span>
-                    <br />
-                </div>
-            </div>
+            <!-- Decision timer hidden but kept for compatibility -->
+            <input id="idOptionDecisionTimer" type="hidden" value="90" />
+            <!-- Agenda page always uses detailed steps (hidden, always checked) -->
+            <input id="idAgendaPageCheck" type="checkbox" checked style="display:none" />
             <br />
             <div class="classCenter">
                 <br />

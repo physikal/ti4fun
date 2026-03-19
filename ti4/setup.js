@@ -6,23 +6,23 @@ const PLAYER_COLOR = 1;
 const PLAYER_CLOCK = 2;
 const PLAYER_NBSPEAKER = 3;
 const PLAYER_INFLUENCE = 4;
-
+const PLAYER_NAME = 5;
 
 var gPlayerData = [
-  [0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, ""],
+  [0, 0, 0, 0, 0, ""],
+  [0, 0, 0, 0, 0, ""],
+  [0, 0, 0, 0, 0, ""],
+  [0, 0, 0, 0, 0, ""],
+  [0, 0, 0, 0, 0, ""],
+  [0, 0, 0, 0, 0, ""],
+  [0, 0, 0, 0, 0, ""],
 ];
 
 var gSpeakerPlayerIdx = 255;
 var gPreviousSpeaker = 255;
 var gSetupNbPlayer = 255;
-var gVPBarStyle = "flex";
+var gVPBarStyle = "none";
 var gFactionClockStyle = "unset";
 var gDecisionTimeLimit = 90;
 
@@ -113,6 +113,9 @@ function fctSwitchLang(l)
     /* Factions */
     for(i=0; i < factionList.length; i++)
     {
+        /* The Obsidian cannot be chosen during setup */
+        if(i == OBSIDIAN_FACTION) continue;
+
         cln = itm.cloneNode(true);
         cln.id = "";
         cln.textContent = factionList[i][FACTION_NAME];
@@ -193,7 +196,7 @@ function FctSetupNbPlayer(newNbPlayerValue)
     document.getElementById("idPlayerSlider").textContent = slidervalue;
 
     /* Update map */
-    document.getElementById("idTable").style.backgroundImage = 'url(ti4/img/'+(slidervalue*1)+'p.png)';
+    /* Map picture removed per design spec */
 
     /* Hide all */
     fctDisplayAll("classSetPlayerFrame", "none");
@@ -261,10 +264,17 @@ function FctSetPlayer(el)
     document.getElementById("idModalSetPlayer").style.display = "block";
     document.getElementById("idConfirmPlayer").disabled = true;
 
+    /* Reset player name input */
+    var nameInput = document.getElementById("idPlayerNameInput");
+    nameInput.value = "";
+
     /* If player already set, display its parameters */
     var faction = el.getElementsByClassName("classPlayerRaceName")[0].textContent;
     if(faction != "Set player")
     {
+        /* Load existing player name */
+        var playerName = el.getAttribute("data-playername");
+        if(playerName) nameInput.value = playerName;
         var clSetItem = document.getElementsByClassName("clSetFaction");
         for(var i=0; i < clSetItem.length; i++)
         {
@@ -331,6 +341,9 @@ function fctConfirm(x)
             reroll = false;
             d17 = Math.floor(Math.random() * factionList.length);
 
+            /* The Obsidian cannot be chosen during setup */
+            if(d17 == OBSIDIAN_FACTION) reroll = true;
+
             for(i=0; i < classPlayerRaceName.length; i++)
             {
                 if(classPlayerRaceName[i].textContent == factionList[d17][FACTION_NAME])
@@ -348,6 +361,10 @@ function fctConfirm(x)
 
     el.getElementsByClassName("classPlayerRaceName")[0].textContent = newfaction;
     el.style.backgroundImage = 'url('+factionList[fctGetFactionIdx(newfaction)][FACTION_ICON]+')';
+
+    /* Save player name on the element */
+    var playerName = document.getElementById("idPlayerNameInput").value.trim();
+    el.setAttribute("data-playername", playerName);
 
     /* Remove previous color if any */
     for(i=0; i < playerColorList.length; i++)
@@ -510,6 +527,7 @@ function fctFillPlayer(pIdx, fIdx)
 
     gPlayerData[pIdx][PLAYER_COLOR] = fctGetColorIdx(clSetPlayerFrame[fIdx]);
     gPlayerData[pIdx][PLAYER_FACTION] = fctGetFactionIdx(clPlayerRaceName[fIdx].textContent);
+    gPlayerData[pIdx][PLAYER_NAME] = clSetPlayerFrame[fIdx].getAttribute("data-playername") || "";
 
 }
 
@@ -531,6 +549,14 @@ function getPlayerFaction(p, n)
 {
     if(p <8) return factionList[gPlayerData[p][PLAYER_FACTION]][n];
     else return "NaF";
+}
+
+function getPlayerDisplayName(p)
+{
+    if(p >= 8) return "NaF";
+    var name = gPlayerData[p][PLAYER_NAME];
+    if(name && name.length > 0) return name;
+    return getPlayerFaction(p, FACTION_NAME);
 }
 
 function fctFullScreen(el)

@@ -255,7 +255,7 @@ var factionList = [
 ["The Ral Nel Consortium", "The Ral Nel Consortium", "The Ral Nel Consortium", "The Ral Nel Consortium", "The Ral Nel Consortium", "The Ral Nel Consortium", "The Ral Nel Consortium", IMG_FOLDER + "ralnel.png", "", "Ral Nel"],
 ["Crimson Rebellion", "Crimson Rebellion", "Crimson Rebellion", "Crimson Rebellion", "Crimson Rebellion", "Crimson Rebellion", "Crimson Rebellion", IMG_FOLDER + "crimson.png", "", "Crimson"],
 ["Deepwrought Scholarate", "Deepwrought Scholarate", "Deepwrought Scholarate", "Deepwrought Scholarate", "Deepwrought Scholarate", "Deepwrought Scholarate", "Deepwrought Scholarate", IMG_FOLDER + "deepwrought.png", "", "Deepwrought"],
-["The Firmament/Obsidian", "The Firmament/Obsidian", "The Firmament/Obsidian", "The Firmament/Obsidian", "The Firmament/Obsidian", "The Firmament/Obsidian", "The Firmament/Obsidian", IMG_FOLDER + "firmament.png", "", "Firmament"],
+["The Firmament", "The Firmament", "The Firmament", "The Firmament", "The Firmament", "The Firmament", "The Firmament", IMG_FOLDER + "firmament.png", "", "Firmament"],
 ["The Shipwrights of Axis", "The Shipwrights of Axis", "The Shipwrights of Axis", "The Shipwrights of Axis", "The Shipwrights of Axis", "The Shipwrights of Axis", "The Shipwrights of Axis", IMG_FOLDER + "axis.png", "", "Axis"],
 ["The Bentor Conglomerate", "The Bentor Conglomerate", "The Bentor Conglomerate", "The Bentor Conglomerate", "The Bentor Conglomerate", "The Bentor Conglomerate", "The Bentor Conglomerate", IMG_FOLDER + "bentor.png", "", "Bentor"],
 ["The Celdauri Trade Confederation", "The Celdauri Trade Confederation", "The Celdauri Trade Confederation", "The Celdauri Trade Confederation", "The Celdauri Trade Confederation", "The Celdauri Trade Confederation", "The Celdauri Trade Confederation", IMG_FOLDER + "celdauri.png", "", "Celdauri"],
@@ -290,7 +290,8 @@ var factionList = [
 ["The Vaylerian Scourge", "The Vaylerian Scourge", "The Vaylerian Scourge", "The Vaylerian Scourge", "The Vaylerian Scourge", "The Vaylerian Scourge", "The Vaylerian Scourge", IMG_FOLDER + "vaylerian.png", "", "Vaylerian"],
 ["The Veldyr Sovereignty", "The Veldyr Sovereignty", "The Veldyr Sovereignty", "The Veldyr Sovereignty", "The Veldyr Sovereignty", "The Veldyr Sovereignty", "The Veldyr Sovereignty", IMG_FOLDER + "veldyr.png", "", "Veldyr"],
 ["The Zelian Purifier", "The Zelian Purifier", "The Zelian Purifier", "The Zelian Purifier", "The Zelian Purifier", "The Zelian Purifier", "The Zelian Purifier", IMG_FOLDER + "zelian.png", "", "Zelian"],
-["The Drahn Consortium", "The Drahn Consortium", "The Drahn Consortium", "The Drahn Consortium", "The Drahn Consortium", "The Drahn Consortium", "The Drahn Consortium", IMG_FOLDER + "drahn.png", "", "Drahn"]
+["The Drahn Consortium", "The Drahn Consortium", "The Drahn Consortium", "The Drahn Consortium", "The Drahn Consortium", "The Drahn Consortium", "The Drahn Consortium", IMG_FOLDER + "drahn.png", "", "Drahn"],
+["The Obsidian", "The Obsidian", "The Obsidian", "The Obsidian", "The Obsidian", "The Obsidian", "The Obsidian", IMG_FOLDER + "firmament.png", "", "Obsidian"]
 ];
 
 const HACAN_FACTION = 4;
@@ -300,8 +301,11 @@ const WINNU_FACTION = 13;
 const POK_FACTION = 17;
 const CODEX_FACTION = 24;
 const TE_FACTION = 25;
+const RAL_NEL_FACTION = 26;
+const FIRMAMENT_FACTION = 29;
 const DS_FACTION = 30;
 const DRAHN_FACTION = 64;
+const OBSIDIAN_FACTION = 65;
 
 
 var playerColorList = [
