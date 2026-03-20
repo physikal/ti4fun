@@ -1,11 +1,22 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { useGameStore } from "src/store/gameStore";
+import { PLAYER_COLOR_HEX } from "src/store/types";
 
 const SPIRAL_STARS = 12000;
 const BG_STARS = 4000;
 const ARMS = 4;
 const ARM_SPREAD = 0.4;
 const SPIRAL_TIGHTNESS = 2.5;
+const MAX_SHIPS = 8;
+const MAX_LASERS = 20;
+const MAX_EXPLOSION_PARTICLES = 64;
+const PARTICLES_PER_EXPLOSION = 8;
+
+const DEFAULT_SHIP_COLORS = [
+  0x44aaff, 0xff4444, 0x44ff88, 0xffaa22,
+  0xaa44ff, 0xff44aa, 0x22dddd, 0xffdd44,
+];
 
 function makeNoiseTexture(size: number): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
@@ -377,13 +388,9 @@ export function GalaxyBackground() {
     scene.add(bgStars);
 
     // --- Ships & combat ---
-    const SHIP_COUNT = 10;
-    const MAX_LASERS = 20;
-
     interface Ship {
       mesh: THREE.Mesh;
-      vel: THREE.Vector3;
-      target: number;
+      index: number;
       orbitRadius: number;
       orbitAngle: number;
       orbitSpeed: number;
@@ -395,13 +402,23 @@ export function GalaxyBackground() {
       mesh: THREE.Mesh;
       vel: THREE.Vector3;
       life: number;
+      targetIndex: number;
     }
 
-    const shipColors = [
-      0x44aaff, 0xff4444, 0x44ff88, 0xffaa22,
-      0xaa44ff, 0xff44aa, 0x22dddd, 0xffdd44,
-      0x66ff66, 0xff6644,
-    ];
+    interface ExplosionParticle {
+      active: boolean;
+      life: number;
+      maxLife: number;
+      x: number;
+      y: number;
+      z: number;
+      vx: number;
+      vy: number;
+      vz: number;
+      r: number;
+      g: number;
+      b: number;
+    }
 
     function makeShipMesh(color: number): THREE.Mesh {
       const shape = new THREE.Shape();
@@ -428,9 +445,9 @@ export function GalaxyBackground() {
     }
 
     const ships: Ship[] = [];
-    for (let i = 0; i < SHIP_COUNT; i++) {
-      const color = shipColors[i % shipColors.length]!;
-      const mesh = makeShipMesh(color);
+    for (let i = 0; i < MAX_SHIPS; i++) {
+      const mesh = makeShipMesh(DEFAULT_SHIP_COLORS[i]!);
+      mesh.visible = false;
       const orbitRadius = 2 + Math.random() * 6;
       const orbitAngle = Math.random() * Math.PI * 2;
       const orbitY = (Math.random() - 0.5) * 1.5;
@@ -443,11 +460,11 @@ export function GalaxyBackground() {
 
       ships.push({
         mesh,
-        vel: new THREE.Vector3(),
-        target: (i + 1 + Math.floor(Math.random() * (SHIP_COUNT - 1))) % SHIP_COUNT,
+        index: i,
         orbitRadius,
         orbitAngle,
-        orbitSpeed: (0.15 + Math.random() * 0.25) * (Math.random() > 0.5 ? 1 : -1),
+        orbitSpeed:
+          (0.15 + Math.random() * 0.25) * (Math.random() > 0.5 ? 1 : -1),
         orbitY,
         cooldown: Math.random() * 3,
       });
@@ -470,7 +487,11 @@ export function GalaxyBackground() {
       return mesh;
     }
 
-    function fireLaser(ship: Ship, targetShip: Ship) {
+    function fireLaser(
+      ship: Ship,
+      targetShip: Ship,
+      targetIdx: number,
+    ) {
       if (lasers.length >= MAX_LASERS) return;
       const shipMat = ship.mesh.material as THREE.MeshBasicMaterial;
       const mesh = makeLaserMesh(shipMat.color.getHex());
@@ -485,7 +506,116 @@ export function GalaxyBackground() {
 
       mesh.lookAt(targetShip.mesh.position);
 
-      lasers.push({ mesh, vel, life: 1.5 });
+      lasers.push({ mesh, vel, life: 1.5, targetIndex: targetIdx });
+    }
+
+    // --- Explosion particle system (1 draw call) ---
+    const explosionParticles: ExplosionParticle[] = [];
+    for (let i = 0; i < MAX_EXPLOSION_PARTICLES; i++) {
+      explosionParticles.push({
+        active: false,
+        life: 0,
+        maxLife: 1,
+        x: 0,
+        y: 0,
+        z: 0,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        r: 1,
+        g: 1,
+        b: 1,
+      });
+    }
+
+    const expPositions = new Float32Array(MAX_EXPLOSION_PARTICLES * 3);
+    const expColors = new Float32Array(MAX_EXPLOSION_PARTICLES * 3);
+    const expSizes = new Float32Array(MAX_EXPLOSION_PARTICLES);
+    const expAlphas = new Float32Array(MAX_EXPLOSION_PARTICLES);
+
+    const expPosAttr = new THREE.BufferAttribute(expPositions, 3);
+    const expColorAttr = new THREE.BufferAttribute(expColors, 3);
+    const expSizeAttr = new THREE.BufferAttribute(expSizes, 1);
+    const expAlphaAttr = new THREE.BufferAttribute(expAlphas, 1);
+
+    const expGeo = new THREE.BufferGeometry();
+    expGeo.setAttribute("position", expPosAttr);
+    expGeo.setAttribute("color", expColorAttr);
+    expGeo.setAttribute("size", expSizeAttr);
+    expGeo.setAttribute("aAlpha", expAlphaAttr);
+
+    const explosionMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+      },
+      vertexShader: `
+        attribute float size;
+        attribute float aAlpha;
+        varying vec3 vColor;
+        varying float vAlpha;
+        uniform float uPixelRatio;
+        void main() {
+          vColor = color;
+          vAlpha = aAlpha;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * uPixelRatio * (4.0 / -mvPosition.z);
+          gl_PointSize = max(gl_PointSize, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        varying float vAlpha;
+        void main() {
+          float d = length(gl_PointCoord - 0.5);
+          if (d > 0.5) discard;
+          float core = exp(-d * 8.0);
+          float glow = exp(-d * 3.0) * 0.6;
+          float alpha = (core + glow) * vAlpha;
+          gl_FragColor = vec4(vColor * (1.0 + core * 0.5), alpha);
+        }
+      `,
+      transparent: true,
+      vertexColors: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+
+    const explosionPoints = new THREE.Points(expGeo, explosionMat);
+    scene.add(explosionPoints);
+    disposables.push(expGeo, explosionMat);
+
+    function spawnExplosion(
+      pos: THREE.Vector3,
+      r: number,
+      g: number,
+      b: number,
+    ) {
+      let spawned = 0;
+      for (const p of explosionParticles) {
+        if (spawned >= PARTICLES_PER_EXPLOSION) break;
+        if (p.active) continue;
+
+        p.active = true;
+        p.life = 0.3 + Math.random() * 0.2;
+        p.maxLife = p.life;
+        p.x = pos.x;
+        p.y = pos.y;
+        p.z = pos.z;
+
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const speed = 0.5 + Math.random() * 1.0;
+        p.vx = Math.sin(phi) * Math.cos(theta) * speed;
+        p.vy = Math.sin(phi) * Math.sin(theta) * speed;
+        p.vz = Math.cos(phi) * speed;
+
+        p.r = r;
+        p.g = g;
+        p.b = b;
+
+        spawned++;
+      }
     }
 
     // --- Animation ---
@@ -498,6 +628,7 @@ export function GalaxyBackground() {
       animId = requestAnimationFrame(animate);
       time += 16;
       const t = time * 0.001;
+      const dt = 0.016;
 
       spiralMat.uniforms["uTime"]!.value = t;
       bgMat.uniforms["uTime"]!.value = t;
@@ -517,15 +648,40 @@ export function GalaxyBackground() {
           baseOpacity * (0.85 + Math.sin(t * 0.3 + i * 1.5) * 0.15);
       }
 
+      // Read game state (sync, zero-cost, no re-renders)
+      const { players } = useGameStore.getState();
+      const inGame = players.length >= 3;
+      const visibleCount = inGame ? players.length : MAX_SHIPS;
+      const maxVP = inGame
+        ? Math.max(1, ...players.map((p) => p.vp))
+        : 1;
+
       // Update ships
-      const dt = 0.016;
-      for (const ship of ships) {
+      for (let i = 0; i < MAX_SHIPS; i++) {
+        const ship = ships[i]!;
+        const mat = ship.mesh.material as THREE.MeshBasicMaterial;
+
+        if (i < visibleCount) {
+          ship.mesh.visible = true;
+          if (inGame) {
+            mat.color.set(PLAYER_COLOR_HEX[players[i]!.color]);
+          } else {
+            mat.color.setHex(DEFAULT_SHIP_COLORS[i]!);
+          }
+        } else {
+          ship.mesh.visible = false;
+          continue;
+        }
+
         ship.orbitAngle += ship.orbitSpeed * dt;
-        ship.orbitRadius += Math.sin(t * 0.5 + ship.orbitAngle) * 0.002;
+        ship.orbitRadius +=
+          Math.sin(t * 0.5 + ship.orbitAngle) * 0.002;
 
         const tx = Math.cos(ship.orbitAngle) * ship.orbitRadius;
         const tz = Math.sin(ship.orbitAngle) * ship.orbitRadius;
-        const ty = ship.orbitY + Math.sin(t * 0.3 + ship.orbitAngle * 2) * 0.3;
+        const ty =
+          ship.orbitY +
+          Math.sin(t * 0.3 + ship.orbitAngle * 2) * 0.3;
 
         const prev = ship.mesh.position.clone();
         ship.mesh.position.set(tx, ty, tz);
@@ -537,12 +693,22 @@ export function GalaxyBackground() {
         }
 
         ship.cooldown -= dt;
-        const targetShip = ships[ship.target];
-        if (targetShip && ship.cooldown <= 0) {
-          const dist = ship.mesh.position.distanceTo(targetShip.mesh.position);
+        if (ship.cooldown <= 0 && visibleCount > 1) {
+          const offset =
+            1 + Math.floor(Math.random() * (visibleCount - 1));
+          const targetIdx = (i + offset) % visibleCount;
+          const targetShip = ships[targetIdx]!;
+          const dist = ship.mesh.position.distanceTo(
+            targetShip.mesh.position,
+          );
           if (dist < 6) {
-            fireLaser(ship, targetShip);
-            ship.cooldown = 1.5 + Math.random() * 2.5;
+            fireLaser(ship, targetShip, targetIdx);
+            let mult = 1.0;
+            if (inGame && players[i]) {
+              const vpRatio = players[i]!.vp / maxVP;
+              mult = 1.0 - vpRatio * 0.6;
+            }
+            ship.cooldown = 2.5 * mult + Math.random() * mult;
           }
         }
       }
@@ -552,18 +718,72 @@ export function GalaxyBackground() {
         const laser = lasers[i]!;
         laser.mesh.position.add(laser.vel);
         laser.life -= dt;
-        const mat = laser.mesh.material as THREE.MeshBasicMaterial;
-        mat.opacity = Math.max(0, laser.life * 0.9);
-        if (laser.life <= 0) {
+
+        let hit = false;
+        const target = ships[laser.targetIndex];
+        if (target && target.mesh.visible) {
+          const dist = laser.mesh.position.distanceTo(
+            target.mesh.position,
+          );
+          if (dist < 0.3) hit = true;
+        }
+
+        if (hit || laser.life <= 0) {
+          const targetMat =
+            target?.mesh.material as THREE.MeshBasicMaterial;
+          const c = targetMat?.color ?? new THREE.Color(1, 1, 1);
+          spawnExplosion(laser.mesh.position, c.r, c.g, c.b);
           scene.remove(laser.mesh);
           lasers.splice(i, 1);
+        } else {
+          const mat = laser.mesh.material as THREE.MeshBasicMaterial;
+          mat.opacity = Math.max(0, laser.life * 0.9);
         }
       }
 
-      camera.position.y =
-        cameraBaseY + Math.sin(t * 0.08) * 0.5;
-      camera.position.z =
-        cameraBaseZ + Math.sin(t * 0.05) * 0.3;
+      // Update explosion particles
+      for (let i = 0; i < MAX_EXPLOSION_PARTICLES; i++) {
+        const p = explosionParticles[i]!;
+        if (p.active) {
+          p.life -= dt;
+          if (p.life <= 0) {
+            p.active = false;
+          } else {
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.z += p.vz * dt;
+            p.vx *= 0.96;
+            p.vy *= 0.96;
+            p.vz *= 0.96;
+          }
+        }
+
+        if (p.active) {
+          const frac = p.life / p.maxLife;
+          expPositions[i * 3] = p.x;
+          expPositions[i * 3 + 1] = p.y;
+          expPositions[i * 3 + 2] = p.z;
+          expColors[i * 3] = p.r;
+          expColors[i * 3 + 1] = p.g;
+          expColors[i * 3 + 2] = p.b;
+          expSizes[i] = 3.0 * frac;
+          expAlphas[i] = frac;
+        } else {
+          expPositions[i * 3] = 0;
+          expPositions[i * 3 + 1] = 0;
+          expPositions[i * 3 + 2] = 0;
+          expSizes[i] = 0;
+          expAlphas[i] = 0;
+        }
+      }
+
+      expPosAttr.needsUpdate = true;
+      expColorAttr.needsUpdate = true;
+      expSizeAttr.needsUpdate = true;
+      expAlphaAttr.needsUpdate = true;
+
+      camera.position.y = cameraBaseY + Math.sin(t * 0.08) * 0.5;
+      camera.position.z = cameraBaseZ + Math.sin(t * 0.05) * 0.3;
       camera.position.x = Math.sin(t * 0.03) * 0.8;
       camera.lookAt(0, 0, 0);
 
@@ -578,6 +798,7 @@ export function GalaxyBackground() {
       const pr = Math.min(window.devicePixelRatio, 2);
       spiralMat.uniforms["uPixelRatio"]!.value = pr;
       bgMat.uniforms["uPixelRatio"]!.value = pr;
+      explosionMat.uniforms["uPixelRatio"]!.value = pr;
     }
     window.addEventListener("resize", onResize);
 
