@@ -133,6 +133,7 @@ export function ActionScreen() {
               const slotIdx = strategySlots.indexOf(slot);
               const isCurrent = slotIdx === activeSlotIndex;
               const isPassed = slot.status === "passed";
+              const isPlayed = slot.status === "played";
 
               const secondSlotForPlayer = playerCount <= 4
                 ? strategySlots.find(
@@ -140,16 +141,22 @@ export function ActionScreen() {
                   )
                 : null;
 
-              const badges: { cardIndex: number; color: string }[] = [
+              const badges: {
+                cardIndex: number;
+                color: string;
+                played: boolean;
+              }[] = [
                 {
                   cardIndex: slot.cardIndex,
                   color: getStrategyColor(slot.cardIndex),
+                  played: slot.status === "played",
                 },
               ];
               if (secondSlotForPlayer) {
                 badges.push({
                   cardIndex: secondSlotForPlayer.cardIndex,
                   color: getStrategyColor(secondSlotForPlayer.cardIndex),
+                  played: secondSlotForPlayer.status === "played",
                 });
               }
 
@@ -164,7 +171,11 @@ export function ActionScreen() {
                         : ""
                   }`}
                   style={{
-                    borderTopColor: badges[0].color,
+                    borderTopColor: isCurrent || isPassed
+                      ? badges[0].color
+                      : isPlayed
+                        ? "rgba(255,255,255,0.15)"
+                        : badges[0].color,
                     borderTopWidth: "3px",
                   }}
                 >
@@ -172,13 +183,20 @@ export function ActionScreen() {
                     {badges.map((b) => (
                       <span
                         key={b.cardIndex}
-                        className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
-                        style={{
+                        className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                          b.played ? "line-through" : ""
+                        }`}
+                        style={b.played ? {
+                          backgroundColor: "rgba(255,255,255,0.08)",
+                          color: "rgba(255,255,255,0.4)",
+                          border: "1px solid rgba(255,255,255,0.15)",
+                        } : {
                           backgroundColor: b.color + "25",
                           color: b.color,
                           border: `1px solid ${b.color}50`,
                         }}
                       >
+                        {b.played ? "✓ " : ""}
                         {getStrategyName(b.cardIndex, locale)}
                       </span>
                     ))}
