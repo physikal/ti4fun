@@ -57,10 +57,7 @@ export function ActionScreen() {
 
   const s1Available = activeSlot?.status === "available";
   const s2Available = secondSlot?.status === "available";
-  const allStratsHandled =
-    (!s1Available || selectedActions.strategy1) &&
-    (playerCount > 4 || !s2Available || selectedActions.strategy2);
-  const canPass = allStratsHandled;
+  const canPass = !s1Available && (playerCount > 4 || !s2Available);
   const canResolve =
     selectedActions.strategy1 ||
     selectedActions.strategy2 ||
