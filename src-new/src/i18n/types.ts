@@ -66,6 +66,18 @@ export interface TranslationStrings {
   ralNelUnpass: string;
   mecatolToggle: string;
   statusChecklist: string;
+  complexVoting: string;
+  simpleVoting: string;
+  selectVoteType: string;
+  forAgainst: string;
+  electPlayer: string;
+  customVote: string;
+  addOption: string;
+  startVoting: string;
+  enterInfluence: string;
+  results: string;
+  winner: string;
+  tied: string;
 }
 
 export type TranslationKey = keyof TranslationStrings;
