@@ -1,14 +1,48 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const STAR_COUNT = 3000;
-const NEBULA_COUNT = 8;
-const DRIFT_SPEED = 0.00008;
-const TWINKLE_SPEED = 0.002;
+const SPIRAL_STARS = 12000;
+const BG_STARS = 4000;
+const ARMS = 4;
+const ARM_SPREAD = 0.4;
+const SPIRAL_TIGHTNESS = 2.5;
+
+function makeNoiseTexture(size: number): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const imageData = ctx.createImageData(size, size);
+  const data = imageData.data;
+
+  for (let i = 0; i < size * size; i++) {
+    const x = i % size;
+    const y = Math.floor(i / size);
+    const cx = x / size - 0.5;
+    const cy = y / size - 0.5;
+    const dist = Math.sqrt(cx * cx + cy * cy) * 2;
+
+    const n1 = Math.sin(cx * 12.9898 + cy * 78.233) * 43758.5453;
+    const noise = (n1 - Math.floor(n1)) * 0.3;
+
+    const falloff = Math.max(0, 1 - dist * 1.2);
+    const val = Math.pow(falloff, 1.5) * (0.7 + noise);
+
+    const idx = i * 4;
+    data[idx] = 255;
+    data[idx + 1] = 255;
+    data[idx + 2] = 255;
+    data[idx + 3] = Math.floor(val * 255);
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
+}
 
 export function GalaxyBackground() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -19,64 +53,307 @@ export function GalaxyBackground() {
       60,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000,
+      2000,
     );
-    camera.position.z = 5;
+    camera.position.set(0, 8, 12);
+    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x050510);
+    renderer.setClearColor(0x020208);
     container.appendChild(renderer.domElement);
 
-    // Stars
-    const starGeo = new THREE.BufferGeometry();
-    const positions = new Float32Array(STAR_COUNT * 3);
-    const colors = new Float32Array(STAR_COUNT * 3);
-    const sizes = new Float32Array(STAR_COUNT);
-    const twinklePhase = new Float32Array(STAR_COUNT);
+    const disposables: { dispose: () => void }[] = [];
 
-    const starColors = [
-      [0.8, 0.85, 1.0],
-      [1.0, 0.95, 0.8],
-      [0.7, 0.8, 1.0],
-      [1.0, 0.85, 0.7],
-      [0.6, 0.7, 1.0],
-    ];
+    // --- Spiral galaxy stars ---
+    const spiralPositions = new Float32Array(SPIRAL_STARS * 3);
+    const spiralColors = new Float32Array(SPIRAL_STARS * 3);
+    const spiralSizes = new Float32Array(SPIRAL_STARS);
+    const spiralRandomness = new Float32Array(SPIRAL_STARS);
 
-    for (let i = 0; i < STAR_COUNT; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 15 - 2;
+    const innerColor = new THREE.Color(0.9, 0.7, 0.4);
+    const midColor = new THREE.Color(0.4, 0.5, 0.9);
+    const outerColor = new THREE.Color(0.2, 0.3, 0.8);
+    const hotColor = new THREE.Color(1.0, 0.85, 0.6);
 
-      const c = starColors[Math.floor(Math.random() * starColors.length)]!;
-      colors[i * 3] = c[0]!;
-      colors[i * 3 + 1] = c[1]!;
-      colors[i * 3 + 2] = c[2]!;
+    for (let i = 0; i < SPIRAL_STARS; i++) {
+      const radius = Math.pow(Math.random(), 0.6) * 10;
+      const armIndex = i % ARMS;
+      const armAngle = (armIndex / ARMS) * Math.PI * 2;
+      const spiralAngle = radius * SPIRAL_TIGHTNESS;
 
-      sizes[i] = Math.random() * 3 + 0.5;
-      twinklePhase[i] = Math.random() * Math.PI * 2;
+      const randomX =
+        (Math.random() - 0.5) * ARM_SPREAD * radius * 0.5 +
+        (Math.random() - 0.5) * 0.3;
+      const randomY =
+        (Math.random() - 0.5) * 0.15 * Math.exp(-radius * 0.15);
+      const randomZ =
+        (Math.random() - 0.5) * ARM_SPREAD * radius * 0.5 +
+        (Math.random() - 0.5) * 0.3;
+
+      const angle = armAngle + spiralAngle;
+      spiralPositions[i * 3] = Math.cos(angle) * radius + randomX;
+      spiralPositions[i * 3 + 1] = randomY;
+      spiralPositions[i * 3 + 2] = Math.sin(angle) * radius + randomZ;
+
+      const t = radius / 10;
+      const color = new THREE.Color();
+      if (t < 0.15) {
+        color.lerpColors(hotColor, innerColor, t / 0.15);
+      } else if (t < 0.5) {
+        color.lerpColors(innerColor, midColor, (t - 0.15) / 0.35);
+      } else {
+        color.lerpColors(midColor, outerColor, (t - 0.5) / 0.5);
+      }
+
+      const brightness = 0.7 + Math.random() * 0.3;
+      spiralColors[i * 3] = color.r * brightness;
+      spiralColors[i * 3 + 1] = color.g * brightness;
+      spiralColors[i * 3 + 2] = color.b * brightness;
+
+      spiralSizes[i] = (Math.random() * 2 + 0.5) * (1 - t * 0.5);
+      spiralRandomness[i] = Math.random() * Math.PI * 2;
     }
 
-    starGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    starGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    starGeo.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+    const spiralGeo = new THREE.BufferGeometry();
+    spiralGeo.setAttribute(
+      "position",
+      new THREE.BufferAttribute(spiralPositions, 3),
+    );
+    spiralGeo.setAttribute(
+      "color",
+      new THREE.BufferAttribute(spiralColors, 3),
+    );
+    spiralGeo.setAttribute(
+      "size",
+      new THREE.BufferAttribute(spiralSizes, 1),
+    );
+    spiralGeo.setAttribute(
+      "aRandom",
+      new THREE.BufferAttribute(spiralRandomness, 1),
+    );
+    disposables.push(spiralGeo);
 
-    const starMat = new THREE.ShaderMaterial({
+    const spiralMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
       },
       vertexShader: `
         attribute float size;
+        attribute float aRandom;
+        varying vec3 vColor;
+        varying float vAlpha;
+        uniform float uTime;
+        uniform float uPixelRatio;
+        void main() {
+          vColor = color;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          float dist = length(position.xz);
+          float twinkle = sin(uTime * 1.5 + aRandom * 6.28) * 0.25 + 0.75;
+          float coreBrightness = exp(-dist * 0.3) * 0.5 + 0.5;
+          vAlpha = twinkle * coreBrightness;
+          gl_PointSize = size * twinkle * uPixelRatio * (4.0 / -mvPosition.z);
+          gl_PointSize = max(gl_PointSize, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        varying float vAlpha;
+        void main() {
+          float d = length(gl_PointCoord - 0.5);
+          if (d > 0.5) discard;
+          float core = exp(-d * 8.0);
+          float glow = exp(-d * 3.0) * 0.6;
+          float alpha = (core + glow) * vAlpha;
+          gl_FragColor = vec4(vColor * (1.0 + core * 0.5), alpha);
+        }
+      `,
+      transparent: true,
+      vertexColors: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    disposables.push(spiralMat);
+
+    const spiralStars = new THREE.Points(spiralGeo, spiralMat);
+    scene.add(spiralStars);
+
+    // --- Galactic core glow ---
+    const coreTexture = makeNoiseTexture(256);
+    disposables.push(coreTexture);
+
+    const coreLayers = [
+      { size: 4, color: 0xffe8c0, opacity: 0.12 },
+      { size: 6, color: 0xffcc80, opacity: 0.06 },
+      { size: 9, color: 0xaa88ff, opacity: 0.03 },
+    ];
+
+    const coreMeshes: THREE.Mesh[] = [];
+    for (const layer of coreLayers) {
+      const mat = new THREE.MeshBasicMaterial({
+        map: coreTexture,
+        color: layer.color,
+        transparent: true,
+        opacity: layer.opacity,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(layer.size, layer.size),
+        mat,
+      );
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.y = 0.01;
+      scene.add(mesh);
+      coreMeshes.push(mesh);
+      disposables.push(mat, mesh.geometry);
+    }
+
+    // --- Nebula clouds along arms ---
+    const nebulaTexture = makeNoiseTexture(256);
+    disposables.push(nebulaTexture);
+
+    const nebulaSpecs = [
+      { angle: 0, dist: 3, size: 4, color: 0x4466cc, opacity: 0.07 },
+      { angle: 1.2, dist: 4.5, size: 5, color: 0x6633aa, opacity: 0.05 },
+      { angle: 2.5, dist: 3.5, size: 3.5, color: 0x3355bb, opacity: 0.06 },
+      { angle: 3.8, dist: 5, size: 4.5, color: 0x553399, opacity: 0.05 },
+      { angle: 0.8, dist: 6, size: 5.5, color: 0x2244aa, opacity: 0.04 },
+      { angle: 2.0, dist: 2, size: 3, color: 0x7744aa, opacity: 0.08 },
+      { angle: 4.5, dist: 4, size: 4, color: 0x4455cc, opacity: 0.06 },
+      { angle: 5.5, dist: 5.5, size: 5, color: 0x553388, opacity: 0.04 },
+      { angle: 1.8, dist: 7, size: 6, color: 0x334499, opacity: 0.03 },
+      { angle: 3.2, dist: 2.5, size: 3, color: 0x885533, opacity: 0.05 },
+      { angle: 5.0, dist: 3, size: 3.5, color: 0xcc6644, opacity: 0.04 },
+      { angle: 0.4, dist: 8, size: 7, color: 0x223366, opacity: 0.025 },
+    ];
+
+    const nebulaMeshes: THREE.Mesh[] = [];
+    for (const spec of nebulaSpecs) {
+      const spiralOff = spec.dist * SPIRAL_TIGHTNESS;
+      const x = Math.cos(spec.angle + spiralOff) * spec.dist;
+      const z = Math.sin(spec.angle + spiralOff) * spec.dist;
+
+      const mat = new THREE.MeshBasicMaterial({
+        map: nebulaTexture,
+        color: spec.color,
+        transparent: true,
+        opacity: spec.opacity,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(spec.size, spec.size),
+        mat,
+      );
+      mesh.position.set(x, (Math.random() - 0.5) * 0.3, z);
+      mesh.rotation.x = -Math.PI / 2 + (Math.random() - 0.5) * 0.3;
+      mesh.rotation.z = Math.random() * Math.PI;
+      scene.add(mesh);
+      nebulaMeshes.push(mesh);
+      disposables.push(mat, mesh.geometry);
+    }
+
+    // --- Dust lanes (darker bands) ---
+    const dustTexture = makeNoiseTexture(128);
+    disposables.push(dustTexture);
+
+    const dustSpecs = [
+      { angle: 0.5, dist: 3, size: 3, opacity: 0.15 },
+      { angle: 2.1, dist: 4, size: 3.5, opacity: 0.12 },
+      { angle: 3.6, dist: 3.5, size: 2.5, opacity: 0.1 },
+      { angle: 5.2, dist: 4.5, size: 3, opacity: 0.12 },
+    ];
+
+    for (const spec of dustSpecs) {
+      const spiralOff = spec.dist * SPIRAL_TIGHTNESS;
+      const x = Math.cos(spec.angle + spiralOff) * spec.dist;
+      const z = Math.sin(spec.angle + spiralOff) * spec.dist;
+
+      const mat = new THREE.MeshBasicMaterial({
+        map: dustTexture,
+        color: 0x030308,
+        transparent: true,
+        opacity: spec.opacity,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(spec.size, spec.size),
+        mat,
+      );
+      mesh.position.set(x, -0.02, z);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.rotation.z = spec.angle + spiralOff;
+      scene.add(mesh);
+      disposables.push(mat, mesh.geometry);
+    }
+
+    // --- Background stars (distant) ---
+    const bgPositions = new Float32Array(BG_STARS * 3);
+    const bgColors = new Float32Array(BG_STARS * 3);
+    const bgSizes = new Float32Array(BG_STARS);
+    const bgRandom = new Float32Array(BG_STARS);
+
+    for (let i = 0; i < BG_STARS; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const r = 40 + Math.random() * 60;
+      bgPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      bgPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      bgPositions[i * 3 + 2] = r * Math.cos(phi);
+
+      const temp = Math.random();
+      if (temp < 0.3) {
+        bgColors[i * 3] = 0.6;
+        bgColors[i * 3 + 1] = 0.7;
+        bgColors[i * 3 + 2] = 1.0;
+      } else if (temp < 0.6) {
+        bgColors[i * 3] = 1.0;
+        bgColors[i * 3 + 1] = 0.95;
+        bgColors[i * 3 + 2] = 0.85;
+      } else {
+        bgColors[i * 3] = 0.9;
+        bgColors[i * 3 + 1] = 0.9;
+        bgColors[i * 3 + 2] = 0.95;
+      }
+
+      bgSizes[i] = Math.random() * 1.5 + 0.3;
+      bgRandom[i] = Math.random() * Math.PI * 2;
+    }
+
+    const bgGeo = new THREE.BufferGeometry();
+    bgGeo.setAttribute(
+      "position",
+      new THREE.BufferAttribute(bgPositions, 3),
+    );
+    bgGeo.setAttribute("color", new THREE.BufferAttribute(bgColors, 3));
+    bgGeo.setAttribute("size", new THREE.BufferAttribute(bgSizes, 1));
+    bgGeo.setAttribute("aRandom", new THREE.BufferAttribute(bgRandom, 1));
+    disposables.push(bgGeo);
+
+    const bgMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+      },
+      vertexShader: `
+        attribute float size;
+        attribute float aRandom;
         varying vec3 vColor;
         uniform float uTime;
         uniform float uPixelRatio;
         void main() {
           vColor = color;
           vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          float twinkle = sin(uTime * 2.0 + position.x * 10.0 + position.y * 7.0) * 0.3 + 0.7;
-          gl_PointSize = size * twinkle * uPixelRatio * (3.0 / -mvPosition.z);
+          float twinkle = sin(uTime * 0.8 + aRandom * 6.28) * 0.4 + 0.6;
+          gl_PointSize = size * twinkle * uPixelRatio * (2.0 / -mvPosition.z);
+          gl_PointSize = max(gl_PointSize, 0.5);
           gl_Position = projectionMatrix * mvPosition;
         }
       `,
@@ -85,9 +362,8 @@ export function GalaxyBackground() {
         void main() {
           float d = length(gl_PointCoord - 0.5);
           if (d > 0.5) discard;
-          float alpha = smoothstep(0.5, 0.1, d);
-          float glow = exp(-d * 4.0) * 0.5;
-          gl_FragColor = vec4(vColor, (alpha + glow) * 0.9);
+          float alpha = smoothstep(0.5, 0.0, d);
+          gl_FragColor = vec4(vColor, alpha * 0.8);
         }
       `,
       transparent: true,
@@ -95,77 +371,46 @@ export function GalaxyBackground() {
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
+    disposables.push(bgMat);
 
-    const stars = new THREE.Points(starGeo, starMat);
-    scene.add(stars);
+    const bgStars = new THREE.Points(bgGeo, bgMat);
+    scene.add(bgStars);
 
-    // Nebula clouds
-    const nebulaColors = [
-      [0.1, 0.15, 0.4],
-      [0.2, 0.05, 0.3],
-      [0.05, 0.15, 0.25],
-      [0.15, 0.05, 0.2],
-      [0.0, 0.1, 0.3],
-      [0.1, 0.02, 0.15],
-      [0.05, 0.1, 0.2],
-      [0.12, 0.08, 0.25],
-    ];
-
-    const canvas = document.createElement("canvas");
-    canvas.width = 128;
-    canvas.height = 128;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-      gradient.addColorStop(0, "rgba(255,255,255,0.4)");
-      gradient.addColorStop(0.4, "rgba(255,255,255,0.1)");
-      gradient.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 128, 128);
-    }
-    const nebulaTexture = new THREE.CanvasTexture(canvas);
-
-    const nebulae: THREE.Mesh[] = [];
-    for (let i = 0; i < NEBULA_COUNT; i++) {
-      const nc = nebulaColors[i % nebulaColors.length]!;
-      const nebMat = new THREE.MeshBasicMaterial({
-        map: nebulaTexture,
-        color: new THREE.Color(nc[0]!, nc[1]!, nc[2]!),
-        transparent: true,
-        opacity: 0.15 + Math.random() * 0.1,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-      const size = 3 + Math.random() * 5;
-      const nebMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(size, size),
-        nebMat,
-      );
-      nebMesh.position.set(
-        (Math.random() - 0.5) * 12,
-        (Math.random() - 0.5) * 8,
-        -5 - Math.random() * 5,
-      );
-      nebMesh.rotation.z = Math.random() * Math.PI;
-      scene.add(nebMesh);
-      nebulae.push(nebMesh);
-    }
-
+    // --- Animation ---
     let animId = 0;
     let time = 0;
+    const cameraBaseY = camera.position.y;
+    const cameraBaseZ = camera.position.z;
 
     function animate() {
       animId = requestAnimationFrame(animate);
       time += 16;
+      const t = time * 0.001;
 
-      starMat.uniforms["uTime"]!.value = time * TWINKLE_SPEED;
+      spiralMat.uniforms["uTime"]!.value = t;
+      bgMat.uniforms["uTime"]!.value = t;
 
-      stars.rotation.y = time * DRIFT_SPEED * 0.3;
-      stars.rotation.x = Math.sin(time * DRIFT_SPEED * 0.5) * 0.05;
+      spiralStars.rotation.y = t * 0.015;
 
-      for (const neb of nebulae) {
-        neb.rotation.z += 0.00005;
+      for (const mesh of coreMeshes) {
+        mesh.rotation.z = t * 0.02;
       }
+
+      for (let i = 0; i < nebulaMeshes.length; i++) {
+        const neb = nebulaMeshes[i]!;
+        neb.rotation.z += 0.0001;
+        const mat = neb.material as THREE.MeshBasicMaterial;
+        const baseOpacity = nebulaSpecs[i]?.opacity ?? 0.05;
+        mat.opacity =
+          baseOpacity * (0.85 + Math.sin(t * 0.3 + i * 1.5) * 0.15);
+      }
+
+      camera.position.y =
+        cameraBaseY + Math.sin(t * 0.08) * 0.5;
+      camera.position.z =
+        cameraBaseZ + Math.sin(t * 0.05) * 0.3;
+      camera.position.x = Math.sin(t * 0.03) * 0.8;
+      camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);
     }
@@ -175,31 +420,20 @@ export function GalaxyBackground() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      starMat.uniforms["uPixelRatio"]!.value = Math.min(
-        window.devicePixelRatio,
-        2,
-      );
+      const pr = Math.min(window.devicePixelRatio, 2);
+      spiralMat.uniforms["uPixelRatio"]!.value = pr;
+      bgMat.uniforms["uPixelRatio"]!.value = pr;
     }
     window.addEventListener("resize", onResize);
 
-    cleanupRef.current = () => {
+    return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", onResize);
       renderer.dispose();
-      starGeo.dispose();
-      starMat.dispose();
-      nebulaTexture.dispose();
-      for (const neb of nebulae) {
-        neb.geometry.dispose();
-        (neb.material as THREE.MeshBasicMaterial).dispose();
-      }
+      for (const d of disposables) d.dispose();
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
-    };
-
-    return () => {
-      cleanupRef.current?.();
     };
   }, []);
 
