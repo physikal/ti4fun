@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useGameStore } from "src/store/gameStore";
 import { useTimer } from "src/hooks/useTimer";
 import { StartScreen } from "src/screens/StartScreen";
@@ -8,6 +9,12 @@ import { ActionScreen } from "src/screens/ActionScreen";
 import { StatusScreen } from "src/screens/StatusScreen";
 import { AgendaScreen } from "src/screens/AgendaScreen";
 import { EndScreen } from "src/screens/EndScreen";
+
+const GalaxyBackground = lazy(() =>
+  import("src/components/layout/GalaxyBackground").then((m) => ({
+    default: m.GalaxyBackground,
+  })),
+);
 
 function TransitionModal() {
   const modal = useGameStore((s) => s.modal);
@@ -36,16 +43,21 @@ export default function App() {
   const screen = useGameStore((s) => s.screen);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {screen === "start" && <StartScreen />}
-      {screen === "setup" && <SetupScreen />}
-      {screen === "options" && <OptionsScreen />}
-      {screen === "strategy" && <StrategyScreen />}
-      {screen === "action" && <ActionScreen />}
-      {screen === "status" && <StatusScreen />}
-      {screen === "agenda" && <AgendaScreen />}
-      {screen === "end" && <EndScreen />}
-      <TransitionModal />
-    </div>
+    <>
+      <Suspense fallback={null}>
+        <GalaxyBackground />
+      </Suspense>
+      <div className="h-full flex flex-col overflow-hidden">
+        {screen === "start" && <StartScreen />}
+        {screen === "setup" && <SetupScreen />}
+        {screen === "options" && <OptionsScreen />}
+        {screen === "strategy" && <StrategyScreen />}
+        {screen === "action" && <ActionScreen />}
+        {screen === "status" && <StatusScreen />}
+        {screen === "agenda" && <AgendaScreen />}
+        {screen === "end" && <EndScreen />}
+        <TransitionModal />
+      </div>
+    </>
   );
 }
