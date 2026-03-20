@@ -207,10 +207,10 @@ export function ActionScreen() {
                   }`}
                   style={{
                     borderTopColor: isCurrent || isPassed
-                      ? badges[0].color
+                      ? badges[0]?.color
                       : isPlayed
                         ? "rgba(255,255,255,0.15)"
-                        : badges[0].color,
+                        : badges[0]?.color,
                     borderTopWidth: "3px",
                   }}
                 >
