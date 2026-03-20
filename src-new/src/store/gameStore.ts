@@ -542,6 +542,17 @@ export const useGameStore = create<GameStore>()(
             firstSlot++;
           }
 
+          // Naalu initiative 0: start with Naalu's slot
+          const naaluPlayer = state.players.find(
+            (p) => p.factionId === NAALU_ID,
+          );
+          if (naaluPlayer) {
+            const naaluSlot = slots.findIndex(
+              (s) => s.playerId === naaluPlayer.id,
+            );
+            if (naaluSlot >= 0) firstSlot = naaluSlot;
+          }
+
           return {
             phase: "ACTION",
             screen: "action",

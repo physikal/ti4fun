@@ -1,5 +1,5 @@
 import type { GameState, Player, StrategySlot } from "src/store/types";
-import { FACTIONS } from "src/data/factions";
+import { FACTIONS, NAALU_ID } from "src/data/factions";
 
 export function getPlayerDisplayName(
   player: Player,
@@ -27,6 +27,12 @@ export function getInitiativeOrder(state: GameState): Player[] {
       const player = state.players[slot.playerId];
       if (player) ordered.push(player);
     }
+  }
+  // Naalu initiative 0: always first
+  const naaluIdx = ordered.findIndex((p) => p.factionId === NAALU_ID);
+  if (naaluIdx > 0) {
+    const naalu = ordered.splice(naaluIdx, 1)[0];
+    if (naalu) ordered.unshift(naalu);
   }
   return ordered;
 }
