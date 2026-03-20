@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { useGameStore } from "src/store/gameStore";
 import { HudButton } from "src/components/layout/HudButton";
+import { Modal } from "src/components/layout/Modal";
 import { PlayerBadge } from "src/components/player/PlayerBadge";
 import { PhaseHeader } from "src/components/layout/PhaseHeader";
 import { t } from "src/i18n/index";
@@ -9,6 +10,10 @@ import { FACTIONS, FIRMAMENT_ID, RAL_NEL_ID } from "src/data/factions";
 import { getPlayerDisplayName } from "src/store/selectors";
 import { PLAYER_COLOR_HEX } from "src/store/types";
 import { formatTime } from "src/hooks/useTimer";
+
+const StrategyCardEffect = lazy(
+  () => import("src/components/effects/StrategyCardEffect"),
+);
 
 export function ActionScreen() {
   const locale = useGameStore((s) => s.locale);
@@ -22,10 +27,14 @@ export function ActionScreen() {
   );
   const options = useGameStore((s) => s.options);
   const resolveAction = useGameStore((s) => s.resolveAction);
-  const nextPlayerAction = useGameStore((s) => s.nextPlayerAction);
   const undoAction = useGameStore((s) => s.undoAction);
   const transformFirmament = useGameStore((s) => s.transformFirmament);
   const ralNelUnpass = useGameStore((s) => s.ralNelUnpass);
+  const modal = useGameStore((s) => s.modal);
+  const speakerId = useGameStore((s) => s.speakerId);
+  const setSpeaker = useGameStore((s) => s.setSpeaker);
+  const randomSpeaker = useGameStore((s) => s.randomSpeaker);
+  const confirmSpeaker = useGameStore((s) => s.confirmSpeaker);
 
   const [selectedActions, setSelectedActions] = useState({
     strategy1: false,
@@ -33,6 +42,11 @@ export function ActionScreen() {
     pass: false,
     tactical: false,
   });
+  const [cardEffect, setCardEffect] = useState<{
+    cardName: string;
+    cardColor: string;
+  } | null>(null);
+  const pendingActionsRef = useRef(selectedActions);
 
   const activeSlot = strategySlots[activeSlotIndex];
   const activePlayer =
@@ -52,10 +66,7 @@ export function ActionScreen() {
 
   const s1Available = activeSlot?.status === "available";
   const s2Available = secondSlot?.status === "available";
-  const allStratsHandled =
-    (!s1Available || selectedActions.strategy1) &&
-    (playerCount > 4 || !s2Available || selectedActions.strategy2);
-  const canPass = allStratsHandled;
+  const canPass = !s1Available && (playerCount > 4 || !s2Available);
   const canResolve =
     selectedActions.strategy1 ||
     selectedActions.strategy2 ||
@@ -70,14 +81,38 @@ export function ActionScreen() {
       Math.floor((activePlayer?.clockMs ?? 0) / 1000);
 
   const handleResolve = () => {
-    resolveAction(selectedActions);
+    let effectCard: { cardName: string; cardColor: string } | null = null;
+
+    if (selectedActions.strategy1 && activeSlot) {
+      effectCard = {
+        cardName: getStrategyName(activeSlot.cardIndex, locale),
+        cardColor: getStrategyColor(activeSlot.cardIndex),
+      };
+    } else if (selectedActions.strategy2 && secondSlot) {
+      effectCard = {
+        cardName: getStrategyName(secondSlot.cardIndex, locale),
+        cardColor: getStrategyColor(secondSlot.cardIndex),
+      };
+    }
+
+    if (effectCard) {
+      pendingActionsRef.current = { ...selectedActions };
+      setCardEffect(effectCard);
+    } else {
+      resolveAction(selectedActions);
+    }
+
     setSelectedActions({
       strategy1: false,
       strategy2: false,
       pass: false,
       tactical: false,
     });
-    nextPlayerAction();
+  };
+
+  const handleEffectContinue = () => {
+    resolveAction(pendingActionsRef.current);
+    setCardEffect(null);
   };
 
   const activeFaction = activePlayer
@@ -133,6 +168,7 @@ export function ActionScreen() {
               const slotIdx = strategySlots.indexOf(slot);
               const isCurrent = slotIdx === activeSlotIndex;
               const isPassed = slot.status === "passed";
+              const isPlayed = slot.status === "played";
 
               const secondSlotForPlayer = playerCount <= 4
                 ? strategySlots.find(
@@ -140,16 +176,22 @@ export function ActionScreen() {
                   )
                 : null;
 
-              const badges: { cardIndex: number; color: string }[] = [
+              const badges: {
+                cardIndex: number;
+                color: string;
+                played: boolean;
+              }[] = [
                 {
                   cardIndex: slot.cardIndex,
                   color: getStrategyColor(slot.cardIndex),
+                  played: slot.status === "played",
                 },
               ];
               if (secondSlotForPlayer) {
                 badges.push({
                   cardIndex: secondSlotForPlayer.cardIndex,
                   color: getStrategyColor(secondSlotForPlayer.cardIndex),
+                  played: secondSlotForPlayer.status === "played",
                 });
               }
 
@@ -164,7 +206,11 @@ export function ActionScreen() {
                         : ""
                   }`}
                   style={{
-                    borderTopColor: badges[0].color,
+                    borderTopColor: isCurrent || isPassed
+                      ? badges[0].color
+                      : isPlayed
+                        ? "rgba(255,255,255,0.15)"
+                        : badges[0].color,
                     borderTopWidth: "3px",
                   }}
                 >
@@ -172,13 +218,20 @@ export function ActionScreen() {
                     {badges.map((b) => (
                       <span
                         key={b.cardIndex}
-                        className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
-                        style={{
+                        className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                          b.played ? "line-through" : ""
+                        }`}
+                        style={b.played ? {
+                          backgroundColor: "rgba(255,255,255,0.08)",
+                          color: "rgba(255,255,255,0.4)",
+                          border: "1px solid rgba(255,255,255,0.15)",
+                        } : {
                           backgroundColor: b.color + "25",
                           color: b.color,
                           border: `1px solid ${b.color}50`,
                         }}
                       >
+                        {b.played ? "✓ " : ""}
                         {getStrategyName(b.cardIndex, locale)}
                       </span>
                     ))}
@@ -209,6 +262,8 @@ export function ActionScreen() {
                 setSelectedActions((s) => ({
                   ...s,
                   strategy1: !s.strategy1,
+                  pass: false,
+                  tactical: false,
                 }))
               }
             >
@@ -230,6 +285,8 @@ export function ActionScreen() {
                 setSelectedActions((s) => ({
                   ...s,
                   strategy2: !s.strategy2,
+                  pass: false,
+                  tactical: false,
                 }))
               }
             >
@@ -246,7 +303,12 @@ export function ActionScreen() {
                 : ""
             }
             onClick={() =>
-              setSelectedActions((s) => ({ ...s, pass: !s.pass }))
+              setSelectedActions((s) => ({
+                strategy1: false,
+                strategy2: false,
+                pass: !s.pass,
+                tactical: false,
+              }))
             }
           >
             {t("pass", locale)}
@@ -261,7 +323,9 @@ export function ActionScreen() {
             }
             onClick={() =>
               setSelectedActions((s) => ({
-                ...s,
+                strategy1: false,
+                strategy2: false,
+                pass: false,
                 tactical: !s.tactical,
               }))
             }
@@ -305,6 +369,48 @@ export function ActionScreen() {
           </div>
         )}
       </div>
+
+      <Modal
+        open={modal?.type === "speaker"}
+        title={t("pickSpeaker", locale)}
+      >
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-2">
+            {players.map((player) => (
+              <div
+                key={player.id}
+                onClick={() => setSpeaker(player.id)}
+                className={`cursor-pointer ${
+                  speakerId === player.id ? "ring-2 ring-hud-accent rounded-lg" : ""
+                }`}
+              >
+                <PlayerBadge player={player} />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 justify-center">
+            <HudButton size="sm" onClick={randomSpeaker}>
+              {t("random", locale)}
+            </HudButton>
+            <HudButton
+              disabled={speakerId === null}
+              onClick={confirmSpeaker}
+            >
+              {t("confirm", locale)}
+            </HudButton>
+          </div>
+        </div>
+      </Modal>
+
+      {cardEffect && (
+        <Suspense fallback={null}>
+          <StrategyCardEffect
+            cardName={cardEffect.cardName}
+            cardColor={cardEffect.cardColor}
+            onContinue={handleEffectContinue}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

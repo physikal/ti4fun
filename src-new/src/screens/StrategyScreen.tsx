@@ -1,10 +1,15 @@
+import { useState } from "react";
 import { useGameStore } from "src/store/gameStore";
 import { HudButton } from "src/components/layout/HudButton";
 import { Modal } from "src/components/layout/Modal";
 import { PlayerBadge } from "src/components/player/PlayerBadge";
 import { PhaseHeader } from "src/components/layout/PhaseHeader";
 import { t } from "src/i18n/index";
-import { STRATEGY_CARDS, getStrategyName } from "src/data/strategyCards";
+import {
+  STRATEGY_CARDS,
+  getStrategyName,
+  getStrategyColor,
+} from "src/data/strategyCards";
 import { HACAN_ID, NAALU_ID, WINNU_ID } from "src/data/factions";
 import { getPlayerDisplayName } from "src/store/selectors";
 import type { GameState } from "src/store/types";
@@ -25,6 +30,10 @@ export function StrategyScreen() {
   const confirmSpeaker = useGameStore((s) => s.confirmSpeaker);
   const setModal = useGameStore((s) => s.setModal);
   const setTelepathicTarget = useGameStore((s) => s.setTelepathicTarget);
+  const swapStrategies = useGameStore((s) => s.swapStrategies);
+
+  const [swapMode, setSwapMode] = useState(false);
+  const [swapFirst, setSwapFirst] = useState<number | null>(null);
 
   const currentChooser =
     (useGameStore.getState() as GameState & { _currentChooser?: number })
@@ -180,54 +189,94 @@ export function StrategyScreen() {
       {/* Strategy Effect Modal */}
       <Modal
         open={modal?.type === "strategyEffect"}
-        title="End of Strategy Phase Effects"
+        title={swapMode ? "Tap two strategies to swap" : "End of Strategy Phase Effects"}
       >
-        <div className="flex flex-col gap-3">
-          {hasHacan && (
+        {swapMode ? (
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-2">
+              {strategySlots
+                .filter((s) => s.playerId !== null)
+                .map((slot) => {
+                  const slotIdx = strategySlots.indexOf(slot);
+                  const player = slot.playerId !== null ? players[slot.playerId] : null;
+                  const isSelected = swapFirst === slotIdx;
+                  const color = getStrategyColor(slot.cardIndex);
+                  return (
+                    <div
+                      key={slotIdx}
+                      className={`hud-panel p-3 cursor-pointer transition-all ${
+                        isSelected ? "ring-2 ring-hud-accent bg-hud-accent/10" : "hover:bg-white/5"
+                      }`}
+                      style={{ borderTopColor: color, borderTopWidth: "3px" }}
+                      onClick={() => {
+                        if (swapFirst === null) {
+                          setSwapFirst(slotIdx);
+                        } else if (swapFirst !== slotIdx) {
+                          swapStrategies(swapFirst, slotIdx);
+                          setSwapFirst(null);
+                        } else {
+                          setSwapFirst(null);
+                        }
+                      }}
+                    >
+                      <div className="text-xs font-bold text-center mb-1" style={{ color }}>
+                        {getStrategyName(slot.cardIndex, locale)}
+                      </div>
+                      {player && <PlayerBadge player={player} compact />}
+                    </div>
+                  );
+                })}
+            </div>
             <HudButton
               className="w-full"
+              variant="accent"
               onClick={() => {
-                setModal(null);
+                setSwapMode(false);
+                setSwapFirst(null);
+              }}
+            >
+              {t("done", locale)}
+            </HudButton>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {(hasHacan || hasWinnu) && (
+              <HudButton
+                className="w-full"
+                onClick={() => {
+                  setSwapMode(true);
+                  setSwapFirst(null);
+                }}
+              >
+                {hasHacan ? t("quantumSwap", locale) : t("acquiescence", locale)}
+              </HudButton>
+            )}
+            {hasNaalu && (
+              <HudButton
+                className="w-full"
+                onClick={() => setModal({ type: "telepathic" })}
+              >
+                Naalu Telepathic
+              </HudButton>
+            )}
+            <HudButton
+              className="w-full"
+              variant="accent"
+              onClick={() => {
+                setSwapMode(false);
+                setSwapFirst(null);
                 if (hasNaalu) {
                   setModal({ type: "telepathic" });
                 } else {
+                  setModal(null);
                   useGameStore.getState().initActionPhase();
                 }
               }}
             >
-              {t("quantumSwap", locale)}
+              {hasNaalu ? t("next", locale) + " →" : t("done", locale)}
             </HudButton>
-          )}
-          {hasNaalu && (
-            <HudButton
-              className="w-full"
-              onClick={() => setModal({ type: "telepathic" })}
-            >
-              Naalu Telepathic
-            </HudButton>
-          )}
-          {hasWinnu && (
-            <HudButton
-              className="w-full"
-              onClick={() => {
-                setModal(null);
-                useGameStore.getState().initActionPhase();
-              }}
-            >
-              {t("acquiescence", locale)}
-            </HudButton>
-          )}
-          <HudButton
-            className="w-full"
-            variant="accent"
-            onClick={() => {
-              setModal(null);
-              useGameStore.getState().initActionPhase();
-            }}
-          >
-            {t("done", locale)}
-          </HudButton>
-        </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
