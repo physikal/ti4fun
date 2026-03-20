@@ -142,16 +142,22 @@ export function ActionScreen() {
                   )
                 : null;
 
-              const badges: { cardIndex: number; color: string }[] = [
+              const badges: {
+                cardIndex: number;
+                color: string;
+                played: boolean;
+              }[] = [
                 {
                   cardIndex: slot.cardIndex,
                   color: getStrategyColor(slot.cardIndex),
+                  played: slot.status === "played",
                 },
               ];
               if (secondSlotForPlayer) {
                 badges.push({
                   cardIndex: secondSlotForPlayer.cardIndex,
                   color: getStrategyColor(secondSlotForPlayer.cardIndex),
+                  played: secondSlotForPlayer.status === "played",
                 });
               }
 
@@ -163,12 +169,14 @@ export function ActionScreen() {
                       ? "border-hud-accent bg-hud-accent/10"
                       : isPassed
                         ? "opacity-40 grayscale"
-                        : isPlayed
-                          ? "opacity-70"
-                          : ""
+                        : ""
                   }`}
                   style={{
-                    borderTopColor: badges[0]?.color ?? "#666",
+                    borderTopColor: isCurrent || isPassed
+                      ? badges[0].color
+                      : isPlayed
+                        ? "rgba(255,255,255,0.15)"
+                        : badges[0].color,
                     borderTopWidth: "3px",
                   }}
                 >
@@ -176,13 +184,20 @@ export function ActionScreen() {
                     {badges.map((b) => (
                       <span
                         key={b.cardIndex}
-                        className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
-                        style={{
+                        className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                          b.played ? "line-through" : ""
+                        }`}
+                        style={b.played ? {
+                          backgroundColor: "rgba(255,255,255,0.08)",
+                          color: "rgba(255,255,255,0.4)",
+                          border: "1px solid rgba(255,255,255,0.15)",
+                        } : {
                           backgroundColor: b.color + "25",
                           color: b.color,
                           border: `1px solid ${b.color}50`,
                         }}
                       >
+                        {b.played ? "✓ " : ""}
                         {getStrategyName(b.cardIndex, locale)}
                       </span>
                     ))}
@@ -192,11 +207,6 @@ export function ActionScreen() {
                     passed={isPassed}
                     compact
                   />
-                  {isPlayed && !isCurrent && (
-                    <div className="text-[10px] uppercase tracking-wider text-hud-accent text-center mt-1">
-                      Played
-                    </div>
-                  )}
                 </div>
               );
             })}
