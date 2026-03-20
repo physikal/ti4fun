@@ -439,23 +439,16 @@ export const useGameStore = create<GameStore>()(
         const hasNaalu = state.players.some(
           (p) => p.factionId === NAALU_ID,
         );
-        if (hasNaalu) {
-          const hasHacan = state.players.some(
-            (p) => p.factionId === HACAN_ID,
-          );
-          const hasWinnu = state.players.some(
-            (p) => p.factionId === WINNU_ID,
-          );
+        const hasHacan = state.players.some(
+          (p) => p.factionId === HACAN_ID,
+        );
+        const hasWinnu = state.players.some(
+          (p) => p.factionId === WINNU_ID,
+        );
 
-          if (hasHacan || hasWinnu) {
-            set({
-              modal: { type: "strategyEffect" },
-            });
-            return;
-          }
-
+        if (hasHacan || hasWinnu || hasNaalu) {
           set({
-            modal: { type: "telepathic" },
+            modal: { type: "strategyEffect" },
           });
           return;
         }
