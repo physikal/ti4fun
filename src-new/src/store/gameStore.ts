@@ -595,13 +595,8 @@ export const useGameStore = create<GameStore>()(
             }
           }
 
-          let showSpeaker = false;
-          if (
-            actions.strategy1 &&
-            slot.cardIndex === POLITICS_INDEX
-          ) {
-            showSpeaker = true;
-          }
+          const showSpeaker =
+            actions.strategy1 && slot.cardIndex === POLITICS_INDEX;
 
           const player = slot.playerId !== null
             ? state.players[slot.playerId]
@@ -616,12 +611,53 @@ export const useGameStore = create<GameStore>()(
               : p,
           );
 
+          // Advance to next player within the same set() call
+          // so we operate on the updated slots
+          let nextSlot = state.activeSlotIndex;
+          let rounds = state.roundCounter;
+          if (!showSpeaker) {
+            let safeCounter = 0;
+            do {
+              safeCounter++;
+              nextSlot++;
+              if (nextSlot >= slots.length) {
+                nextSlot = 0;
+                rounds++;
+              }
+            } while (
+              safeCounter < 10 &&
+              (() => {
+                const s = slots[nextSlot];
+                return (
+                  !s ||
+                  s.playerId === null ||
+                  (s.status !== "available" && s.status !== "played")
+                );
+              })()
+            );
+
+            if (safeCounter >= 10) {
+              return {
+                phase: "STATUS" as const,
+                screen: "status" as const,
+                strategySlots: slots,
+                actionHistory: [...state.actionHistory, snapshot],
+                currentPlayerTimerSec: 0,
+                players: updatedPlayers,
+                roundCounter: rounds,
+                modal: null,
+              };
+            }
+          }
+
           return {
             strategySlots: slots,
             actionHistory: [...state.actionHistory, snapshot],
             currentPlayerTimerSec: 0,
             players: updatedPlayers,
             modal: showSpeaker ? { type: "speaker" } : null,
+            activeSlotIndex: nextSlot,
+            roundCounter: rounds,
           };
         });
         logAction(
@@ -629,9 +665,6 @@ export const useGameStore = create<GameStore>()(
           set,
           `${actingPlayer}: ${actionType}`,
         );
-        if (get().modal?.type !== "speaker") {
-          get().nextPlayerAction();
-        }
       },
 
       nextPlayerAction: () =>
