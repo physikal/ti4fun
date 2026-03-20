@@ -634,6 +634,7 @@ export const useGameStore = create<GameStore>()(
           set,
           `${actingPlayer}: ${actionType}`,
         );
+        get().nextPlayerAction();
       },
 
       nextPlayerAction: () =>
