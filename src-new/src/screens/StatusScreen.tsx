@@ -66,7 +66,7 @@ export function StatusScreen() {
           <h3 className="text-sm font-bold text-hud-accent mb-2">
             {t("vp", locale)}
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="flex flex-col gap-2">
             {players.map((player) => (
               <VPPlayerCard key={player.id} player={player} />
             ))}
@@ -124,20 +124,22 @@ function VPPlayerCard({ player }: { player: Player }) {
 
   return (
     <div className="flex items-center gap-2">
-      <PlayerBadge player={player} compact />
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex-1 min-w-0">
+        <PlayerBadge player={player} compact />
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={() => setVP(-1)}
-          className="w-7 h-7 rounded bg-black/30 border border-hud-border/50 text-sm hover:bg-white/10 transition-colors"
+          className="w-8 h-8 rounded bg-black/30 border border-hud-border/50 text-sm hover:bg-white/10 transition-colors"
         >
           -
         </button>
-        <span className="w-6 text-center font-mono font-bold text-sm">
+        <span className="w-8 text-center font-mono font-bold text-base">
           {player.vp}
         </span>
         <button
           onClick={() => setVP(1)}
-          className="w-7 h-7 rounded bg-black/30 border border-hud-border/50 text-sm hover:bg-white/10 transition-colors"
+          className="w-8 h-8 rounded bg-black/30 border border-hud-border/50 text-sm hover:bg-white/10 transition-colors"
         >
           +
         </button>

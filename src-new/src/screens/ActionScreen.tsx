@@ -134,6 +134,7 @@ export function ActionScreen() {
               const slotIdx = strategySlots.indexOf(slot);
               const isCurrent = slotIdx === activeSlotIndex;
               const isPassed = slot.status === "passed";
+              const isPlayed = slot.status === "played";
 
               const secondSlotForPlayer = playerCount <= 4
                 ? strategySlots.find(
@@ -162,7 +163,9 @@ export function ActionScreen() {
                       ? "border-hud-accent bg-hud-accent/10"
                       : isPassed
                         ? "opacity-40 grayscale"
-                        : ""
+                        : isPlayed
+                          ? "opacity-70"
+                          : ""
                   }`}
                   style={{
                     borderTopColor: badges[0]?.color ?? "#666",
@@ -189,6 +192,11 @@ export function ActionScreen() {
                     passed={isPassed}
                     compact
                   />
+                  {isPlayed && !isCurrent && (
+                    <div className="text-[10px] uppercase tracking-wider text-hud-accent text-center mt-1">
+                      Played
+                    </div>
+                  )}
                 </div>
               );
             })}
