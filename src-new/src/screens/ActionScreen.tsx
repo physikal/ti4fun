@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { useGameStore } from "src/store/gameStore";
 import { HudButton } from "src/components/layout/HudButton";
 import { Modal } from "src/components/layout/Modal";
@@ -10,6 +10,10 @@ import { FACTIONS, FIRMAMENT_ID, RAL_NEL_ID } from "src/data/factions";
 import { getPlayerDisplayName } from "src/store/selectors";
 import { PLAYER_COLOR_HEX } from "src/store/types";
 import { formatTime } from "src/hooks/useTimer";
+
+const StrategyCardEffect = lazy(
+  () => import("src/components/effects/StrategyCardEffect"),
+);
 
 export function ActionScreen() {
   const locale = useGameStore((s) => s.locale);
@@ -38,6 +42,11 @@ export function ActionScreen() {
     pass: false,
     tactical: false,
   });
+  const [cardEffect, setCardEffect] = useState<{
+    cardName: string;
+    cardColor: string;
+  } | null>(null);
+  const pendingActionsRef = useRef(selectedActions);
 
   const activeSlot = strategySlots[activeSlotIndex];
   const activePlayer =
@@ -72,13 +81,38 @@ export function ActionScreen() {
       Math.floor((activePlayer?.clockMs ?? 0) / 1000);
 
   const handleResolve = () => {
-    resolveAction(selectedActions);
+    let effectCard: { cardName: string; cardColor: string } | null = null;
+
+    if (selectedActions.strategy1 && activeSlot) {
+      effectCard = {
+        cardName: getStrategyName(activeSlot.cardIndex, locale),
+        cardColor: getStrategyColor(activeSlot.cardIndex),
+      };
+    } else if (selectedActions.strategy2 && secondSlot) {
+      effectCard = {
+        cardName: getStrategyName(secondSlot.cardIndex, locale),
+        cardColor: getStrategyColor(secondSlot.cardIndex),
+      };
+    }
+
+    if (effectCard) {
+      pendingActionsRef.current = { ...selectedActions };
+      setCardEffect(effectCard);
+    } else {
+      resolveAction(selectedActions);
+    }
+
     setSelectedActions({
       strategy1: false,
       strategy2: false,
       pass: false,
       tactical: false,
     });
+  };
+
+  const handleEffectContinue = () => {
+    resolveAction(pendingActionsRef.current);
+    setCardEffect(null);
   };
 
   const activeFaction = activePlayer
@@ -367,6 +401,16 @@ export function ActionScreen() {
           </div>
         </div>
       </Modal>
+
+      {cardEffect && (
+        <Suspense fallback={null}>
+          <StrategyCardEffect
+            cardName={cardEffect.cardName}
+            cardColor={cardEffect.cardColor}
+            onContinue={handleEffectContinue}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
