@@ -449,7 +449,7 @@ export function GalaxyBackground() {
     for (let i = 0; i < MAX_SHIPS; i++) {
       const mesh = makeShipMesh(DEFAULT_SHIP_COLORS[i]!);
       mesh.visible = false;
-      mesh.scale.set(1.5, 1.5, 1.5);
+      mesh.scale.set(1, 1, 1);
       const orbitRadius = 2 + Math.random() * 6;
       const orbitAngle = Math.random() * Math.PI * 2;
       const orbitY = (Math.random() - 0.5) * 1.5;
