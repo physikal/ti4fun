@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useGameStore } from "src/store/gameStore";
 import { HudButton } from "src/components/layout/HudButton";
+import { Modal } from "src/components/layout/Modal";
 import { PlayerBadge } from "src/components/player/PlayerBadge";
 import { PhaseHeader } from "src/components/layout/PhaseHeader";
 import { t } from "src/i18n/index";
@@ -25,6 +26,11 @@ export function ActionScreen() {
   const undoAction = useGameStore((s) => s.undoAction);
   const transformFirmament = useGameStore((s) => s.transformFirmament);
   const ralNelUnpass = useGameStore((s) => s.ralNelUnpass);
+  const modal = useGameStore((s) => s.modal);
+  const speakerId = useGameStore((s) => s.speakerId);
+  const setSpeaker = useGameStore((s) => s.setSpeaker);
+  const randomSpeaker = useGameStore((s) => s.randomSpeaker);
+  const confirmSpeaker = useGameStore((s) => s.confirmSpeaker);
 
   const [selectedActions, setSelectedActions] = useState({
     strategy1: false,
@@ -314,6 +320,38 @@ export function ActionScreen() {
           </div>
         )}
       </div>
+
+      <Modal
+        open={modal?.type === "speaker"}
+        title={t("pickSpeaker", locale)}
+      >
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-2">
+            {players.map((player) => (
+              <div
+                key={player.id}
+                onClick={() => setSpeaker(player.id)}
+                className={`cursor-pointer ${
+                  speakerId === player.id ? "ring-2 ring-hud-accent rounded-lg" : ""
+                }`}
+              >
+                <PlayerBadge player={player} />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 justify-center">
+            <HudButton size="sm" onClick={randomSpeaker}>
+              {t("random", locale)}
+            </HudButton>
+            <HudButton
+              disabled={speakerId === null}
+              onClick={confirmSpeaker}
+            >
+              {t("confirm", locale)}
+            </HudButton>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

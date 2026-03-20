@@ -276,6 +276,8 @@ export const useGameStore = create<GameStore>()(
         logAction(get, set, `Speaker: ${playerName(speaker)}`);
         if (state.phase === "STRATEGY") {
           get().initStrategyPhase();
+        } else if (state.phase === "ACTION") {
+          get().nextPlayerAction();
         }
       },
 
@@ -634,7 +636,9 @@ export const useGameStore = create<GameStore>()(
           set,
           `${actingPlayer}: ${actionType}`,
         );
-        get().nextPlayerAction();
+        if (get().modal?.type !== "speaker") {
+          get().nextPlayerAction();
+        }
       },
 
       nextPlayerAction: () =>
