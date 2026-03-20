@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useGameStore } from "src/store/gameStore";
 import { HudButton } from "src/components/layout/HudButton";
+import { Modal } from "src/components/layout/Modal";
 import { PlayerBadge } from "src/components/player/PlayerBadge";
 import { PhaseHeader } from "src/components/layout/PhaseHeader";
 import { t } from "src/i18n/index";
@@ -22,10 +23,14 @@ export function ActionScreen() {
   );
   const options = useGameStore((s) => s.options);
   const resolveAction = useGameStore((s) => s.resolveAction);
-  const nextPlayerAction = useGameStore((s) => s.nextPlayerAction);
   const undoAction = useGameStore((s) => s.undoAction);
   const transformFirmament = useGameStore((s) => s.transformFirmament);
   const ralNelUnpass = useGameStore((s) => s.ralNelUnpass);
+  const modal = useGameStore((s) => s.modal);
+  const speakerId = useGameStore((s) => s.speakerId);
+  const setSpeaker = useGameStore((s) => s.setSpeaker);
+  const randomSpeaker = useGameStore((s) => s.randomSpeaker);
+  const confirmSpeaker = useGameStore((s) => s.confirmSpeaker);
 
   const [selectedActions, setSelectedActions] = useState({
     strategy1: false,
@@ -52,10 +57,7 @@ export function ActionScreen() {
 
   const s1Available = activeSlot?.status === "available";
   const s2Available = secondSlot?.status === "available";
-  const allStratsHandled =
-    (!s1Available || selectedActions.strategy1) &&
-    (playerCount > 4 || !s2Available || selectedActions.strategy2);
-  const canPass = allStratsHandled;
+  const canPass = !s1Available && (playerCount > 4 || !s2Available);
   const canResolve =
     selectedActions.strategy1 ||
     selectedActions.strategy2 ||
@@ -77,7 +79,6 @@ export function ActionScreen() {
       pass: false,
       tactical: false,
     });
-    nextPlayerAction();
   };
 
   const activeFaction = activePlayer
@@ -227,6 +228,8 @@ export function ActionScreen() {
                 setSelectedActions((s) => ({
                   ...s,
                   strategy1: !s.strategy1,
+                  pass: false,
+                  tactical: false,
                 }))
               }
             >
@@ -248,6 +251,8 @@ export function ActionScreen() {
                 setSelectedActions((s) => ({
                   ...s,
                   strategy2: !s.strategy2,
+                  pass: false,
+                  tactical: false,
                 }))
               }
             >
@@ -264,7 +269,12 @@ export function ActionScreen() {
                 : ""
             }
             onClick={() =>
-              setSelectedActions((s) => ({ ...s, pass: !s.pass }))
+              setSelectedActions((s) => ({
+                strategy1: false,
+                strategy2: false,
+                pass: !s.pass,
+                tactical: false,
+              }))
             }
           >
             {t("pass", locale)}
@@ -279,7 +289,9 @@ export function ActionScreen() {
             }
             onClick={() =>
               setSelectedActions((s) => ({
-                ...s,
+                strategy1: false,
+                strategy2: false,
+                pass: false,
                 tactical: !s.tactical,
               }))
             }
@@ -323,6 +335,38 @@ export function ActionScreen() {
           </div>
         )}
       </div>
+
+      <Modal
+        open={modal?.type === "speaker"}
+        title={t("pickSpeaker", locale)}
+      >
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-2">
+            {players.map((player) => (
+              <div
+                key={player.id}
+                onClick={() => setSpeaker(player.id)}
+                className={`cursor-pointer ${
+                  speakerId === player.id ? "ring-2 ring-hud-accent rounded-lg" : ""
+                }`}
+              >
+                <PlayerBadge player={player} />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 justify-center">
+            <HudButton size="sm" onClick={randomSpeaker}>
+              {t("random", locale)}
+            </HudButton>
+            <HudButton
+              disabled={speakerId === null}
+              onClick={confirmSpeaker}
+            >
+              {t("confirm", locale)}
+            </HudButton>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

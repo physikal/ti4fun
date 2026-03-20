@@ -117,6 +117,7 @@ export interface GameState {
   simpleAgendaStep: 1 | 2;
   votesFor: number;
   votesAgainst: number;
+  lastActivitySec: number;
   gameElapsedSec: number;
   currentPlayerTimerSec: number;
   clockRunning: boolean;

@@ -40,7 +40,7 @@ function playerName(player: Player | undefined | null): string {
 function createSnapshot(state: GameState): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(state)) {
-    if (key !== "modal" && typeof value !== "function") {
+    if (key !== "modal" && key !== "gameLog" && typeof value !== "function") {
       result[key] = value;
     }
   }
@@ -111,6 +111,7 @@ function createInitialState(): GameState {
     simpleAgendaStep: 1,
     votesFor: 0,
     votesAgainst: 0,
+    lastActivitySec: 0,
     gameElapsedSec: 0,
     currentPlayerTimerSec: 0,
     clockRunning: false,
@@ -176,6 +177,7 @@ interface GameActions {
   startNewRound: () => void;
   goToEndGame: () => void;
 
+  resetActivity: () => void;
   tick: () => void;
   toggleClock: () => void;
   startClock: () => void;
@@ -245,6 +247,7 @@ export const useGameStore = create<GameStore>()(
           round: 1,
           roundCounter: 1,
           clockRunning: true,
+          lastActivitySec: 0,
           gameElapsedSec: 0,
           currentPlayerTimerSec: 0,
           strategySlots: createInitialSlots(),
@@ -274,8 +277,11 @@ export const useGameStore = create<GameStore>()(
         const speaker = state.players[state.speakerId ?? 0];
         set({ modal: null });
         logAction(get, set, `Speaker: ${playerName(speaker)}`);
+        get().resetActivity();
         if (state.phase === "STRATEGY") {
           get().initStrategyPhase();
+        } else if (state.phase === "ACTION") {
+          get().nextPlayerAction();
         }
       },
 
@@ -381,6 +387,7 @@ export const useGameStore = create<GameStore>()(
             set,
             `${playerName(picker)} picks ${cardName}`,
           );
+          get().resetActivity();
         }
       },
 
@@ -416,14 +423,17 @@ export const useGameStore = create<GameStore>()(
           } as Partial<GameState> & { _currentChooser: number };
         });
         logAction(get, set, "Undo strategy pick");
+        get().resetActivity();
       },
 
       endStrategyPhase: () => {
         const state = get();
+        if (!state.endOfStrategyPhase) return;
+        set({ endOfStrategyPhase: false });
         const slots = state.strategySlots.map((s) => ({ ...s }));
 
         for (const slot of slots) {
-          if (slot.playerId === null) {
+          if (slot.playerId === null && slot.status === "available") {
             slot.tradeGoods += 1;
             slot.status = "disabled";
           }
@@ -431,27 +441,21 @@ export const useGameStore = create<GameStore>()(
 
         set({ strategySlots: slots });
         logAction(get, set, "Strategy phase ends");
+        get().resetActivity();
 
         const hasNaalu = state.players.some(
           (p) => p.factionId === NAALU_ID,
         );
-        if (hasNaalu) {
-          const hasHacan = state.players.some(
-            (p) => p.factionId === HACAN_ID,
-          );
-          const hasWinnu = state.players.some(
-            (p) => p.factionId === WINNU_ID,
-          );
+        const hasHacan = state.players.some(
+          (p) => p.factionId === HACAN_ID,
+        );
+        const hasWinnu = state.players.some(
+          (p) => p.factionId === WINNU_ID,
+        );
 
-          if (hasHacan || hasWinnu) {
-            set({
-              modal: { type: "strategyEffect" },
-            });
-            return;
-          }
-
+        if (hasHacan || hasWinnu || hasNaalu) {
           set({
-            modal: { type: "telepathic" },
+            modal: { type: "strategyEffect" },
           });
           return;
         }
@@ -480,6 +484,7 @@ export const useGameStore = create<GameStore>()(
           set,
           `Naalu telepathic -> ${targetName}`,
         );
+        get().resetActivity();
       },
 
       swapStrategies: (slotA, slotB) => {
@@ -589,22 +594,24 @@ export const useGameStore = create<GameStore>()(
           }
 
           if (actions.pass) {
-            slot.status = "passed";
             if (state.playerCount <= 4) {
               const secondSlot = slots.find(
                 (s) => s.secondPickPlayerId === slot.playerId,
               );
-              if (secondSlot) secondSlot.status = "passed";
+              if (
+                slot.status === "played" &&
+                (!secondSlot || secondSlot.status === "played")
+              ) {
+                slot.status = "passed";
+                if (secondSlot) secondSlot.status = "passed";
+              }
+            } else {
+              slot.status = "passed";
             }
           }
 
-          let showSpeaker = false;
-          if (
-            actions.strategy1 &&
-            slot.cardIndex === POLITICS_INDEX
-          ) {
-            showSpeaker = true;
-          }
+          const showSpeaker =
+            actions.strategy1 && slot.cardIndex === POLITICS_INDEX;
 
           const player = slot.playerId !== null
             ? state.players[slot.playerId]
@@ -619,12 +626,53 @@ export const useGameStore = create<GameStore>()(
               : p,
           );
 
+          // Advance to next player within the same set() call
+          // so we operate on the updated slots
+          let nextSlot = state.activeSlotIndex;
+          let rounds = state.roundCounter;
+          if (!showSpeaker) {
+            let safeCounter = 0;
+            do {
+              safeCounter++;
+              nextSlot++;
+              if (nextSlot >= slots.length) {
+                nextSlot = 0;
+                rounds++;
+              }
+            } while (
+              safeCounter < 10 &&
+              (() => {
+                const s = slots[nextSlot];
+                return (
+                  !s ||
+                  s.playerId === null ||
+                  (s.status !== "available" && s.status !== "played")
+                );
+              })()
+            );
+
+            if (safeCounter >= 10) {
+              return {
+                phase: "STATUS" as const,
+                screen: "status" as const,
+                strategySlots: slots,
+                actionHistory: [...state.actionHistory, snapshot],
+                currentPlayerTimerSec: 0,
+                players: updatedPlayers,
+                roundCounter: rounds,
+                modal: null,
+              };
+            }
+          }
+
           return {
             strategySlots: slots,
             actionHistory: [...state.actionHistory, snapshot],
             currentPlayerTimerSec: 0,
             players: updatedPlayers,
             modal: showSpeaker ? { type: "speaker" } : null,
+            activeSlotIndex: nextSlot,
+            roundCounter: rounds,
           };
         });
         logAction(
@@ -632,6 +680,7 @@ export const useGameStore = create<GameStore>()(
           set,
           `${actingPlayer}: ${actionType}`,
         );
+        get().resetActivity();
       },
 
       nextPlayerAction: () =>
@@ -694,6 +743,7 @@ export const useGameStore = create<GameStore>()(
           };
         });
         logAction(get, set, "Undo action");
+        get().resetActivity();
       },
 
       transformFirmament: () => {
@@ -749,6 +799,7 @@ export const useGameStore = create<GameStore>()(
 
       statusNext: () => {
         logAction(get, set, "Status phase complete");
+        get().resetActivity();
         const state = get();
         if (state.agendaPhase === 1) {
           get().goToAgendaPhase();
@@ -812,6 +863,7 @@ export const useGameStore = create<GameStore>()(
           set,
           `Agenda ${step} resolved`,
         );
+        get().resetActivity();
       },
 
       simpleAgendaBack: () =>
@@ -868,13 +920,41 @@ export const useGameStore = create<GameStore>()(
         logAction(get, set, "Game ends");
       },
 
+      resetActivity: () =>
+        set((state) => ({ lastActivitySec: state.gameElapsedSec })),
+
       tick: () =>
         set((state) => {
           if (!state.clockRunning) return {};
-          return {
-            gameElapsedSec: state.gameElapsedSec + 1,
+
+          const elapsed = state.gameElapsedSec + 1;
+          const result: Partial<GameState> = {
+            gameElapsedSec: elapsed,
             currentPlayerTimerSec: state.currentPlayerTimerSec + 1,
           };
+
+          if (state.phase === "GALAXY") {
+            result.lastActivitySec = elapsed;
+            return result;
+          }
+
+          const threshold = state.options.inactivityMinutes * 60;
+          if (threshold <= 0) return result;
+
+          const idle = elapsed - state.lastActivitySec;
+
+          if (idle >= threshold * 2 && state.modal?.type !== "stopAlert") {
+            result.clockRunning = false;
+            result.modal = { type: "stopAlert" };
+          } else if (
+            idle >= threshold &&
+            idle < threshold * 2 &&
+            state.modal === null
+          ) {
+            result.modal = { type: "inactivity" };
+          }
+
+          return result;
         }),
 
       toggleClock: () =>
@@ -915,7 +995,15 @@ export const useGameStore = create<GameStore>()(
           const parsed = JSON.parse(json) as Record<string, unknown>;
           if (!parsed["phase"] || !parsed["players"]) return false;
           const gameLog = (parsed["gameLog"] as GameLogEntry[] | undefined) ?? [];
-          set({ ...parsed, modal: null, gameLog } as Partial<GameState>);
+          const lastActivitySec =
+            (parsed["lastActivitySec"] as number | undefined) ??
+            ((parsed["gameElapsedSec"] as number | undefined) ?? 0);
+          set({
+            ...parsed,
+            modal: null,
+            gameLog,
+            lastActivitySec,
+          } as Partial<GameState>);
           return true;
         } catch {
           return false;

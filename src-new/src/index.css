@@ -40,11 +40,7 @@
   }
 
   body {
-    background-color: var(--color-hud-bg);
-    background-image: url("../public/assets/backgrounds/bluespace.jpg");
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background-color: #050510;
     color: var(--color-hud-text);
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
     -webkit-tap-highlight-color: transparent;

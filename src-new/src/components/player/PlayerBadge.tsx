@@ -48,6 +48,11 @@ export function PlayerBadge({
         >
           {displayName}
         </span>
+        {faction && (
+          <span className="text-[10px] text-hud-muted truncate">
+            {faction.names[locale]}
+          </span>
+        )}
         {passed && (
           <span className="text-[10px] uppercase tracking-wider text-hud-danger">
             PASSED
