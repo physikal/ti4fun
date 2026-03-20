@@ -209,6 +209,8 @@ export function ActionScreen() {
                 setSelectedActions((s) => ({
                   ...s,
                   strategy1: !s.strategy1,
+                  pass: false,
+                  tactical: false,
                 }))
               }
             >
@@ -230,6 +232,8 @@ export function ActionScreen() {
                 setSelectedActions((s) => ({
                   ...s,
                   strategy2: !s.strategy2,
+                  pass: false,
+                  tactical: false,
                 }))
               }
             >
@@ -246,7 +250,12 @@ export function ActionScreen() {
                 : ""
             }
             onClick={() =>
-              setSelectedActions((s) => ({ ...s, pass: !s.pass }))
+              setSelectedActions((s) => ({
+                strategy1: false,
+                strategy2: false,
+                pass: !s.pass,
+                tactical: false,
+              }))
             }
           >
             {t("pass", locale)}
@@ -261,7 +270,9 @@ export function ActionScreen() {
             }
             onClick={() =>
               setSelectedActions((s) => ({
-                ...s,
+                strategy1: false,
+                strategy2: false,
+                pass: false,
                 tactical: !s.tactical,
               }))
             }
