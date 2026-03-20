@@ -376,6 +376,118 @@ export function GalaxyBackground() {
     const bgStars = new THREE.Points(bgGeo, bgMat);
     scene.add(bgStars);
 
+    // --- Ships & combat ---
+    const SHIP_COUNT = 10;
+    const MAX_LASERS = 20;
+
+    interface Ship {
+      mesh: THREE.Mesh;
+      vel: THREE.Vector3;
+      target: number;
+      orbitRadius: number;
+      orbitAngle: number;
+      orbitSpeed: number;
+      orbitY: number;
+      cooldown: number;
+    }
+
+    interface Laser {
+      mesh: THREE.Mesh;
+      vel: THREE.Vector3;
+      life: number;
+    }
+
+    const shipColors = [
+      0x44aaff, 0xff4444, 0x44ff88, 0xffaa22,
+      0xaa44ff, 0xff44aa, 0x22dddd, 0xffdd44,
+      0x66ff66, 0xff6644,
+    ];
+
+    function makeShipMesh(color: number): THREE.Mesh {
+      const shape = new THREE.Shape();
+      shape.moveTo(0, 0.12);
+      shape.lineTo(0.05, -0.06);
+      shape.lineTo(0.03, -0.04);
+      shape.lineTo(0, -0.08);
+      shape.lineTo(-0.03, -0.04);
+      shape.lineTo(-0.05, -0.06);
+      shape.closePath();
+
+      const geo = new THREE.ShapeGeometry(shape);
+      const mat = new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      disposables.push(geo, mat);
+      return mesh;
+    }
+
+    const ships: Ship[] = [];
+    for (let i = 0; i < SHIP_COUNT; i++) {
+      const color = shipColors[i % shipColors.length]!;
+      const mesh = makeShipMesh(color);
+      const orbitRadius = 2 + Math.random() * 6;
+      const orbitAngle = Math.random() * Math.PI * 2;
+      const orbitY = (Math.random() - 0.5) * 1.5;
+      mesh.position.set(
+        Math.cos(orbitAngle) * orbitRadius,
+        orbitY,
+        Math.sin(orbitAngle) * orbitRadius,
+      );
+      scene.add(mesh);
+
+      ships.push({
+        mesh,
+        vel: new THREE.Vector3(),
+        target: (i + 1 + Math.floor(Math.random() * (SHIP_COUNT - 1))) % SHIP_COUNT,
+        orbitRadius,
+        orbitAngle,
+        orbitSpeed: (0.15 + Math.random() * 0.25) * (Math.random() > 0.5 ? 1 : -1),
+        orbitY,
+        cooldown: Math.random() * 3,
+      });
+    }
+
+    const lasers: Laser[] = [];
+
+    function makeLaserMesh(color: number): THREE.Mesh {
+      const geo = new THREE.PlaneGeometry(0.01, 0.15);
+      const mat = new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      disposables.push(geo, mat);
+      return mesh;
+    }
+
+    function fireLaser(ship: Ship, targetShip: Ship) {
+      if (lasers.length >= MAX_LASERS) return;
+      const shipMat = ship.mesh.material as THREE.MeshBasicMaterial;
+      const mesh = makeLaserMesh(shipMat.color.getHex());
+
+      mesh.position.copy(ship.mesh.position);
+      scene.add(mesh);
+
+      const dir = new THREE.Vector3()
+        .subVectors(targetShip.mesh.position, ship.mesh.position)
+        .normalize();
+      const vel = dir.multiplyScalar(0.15);
+
+      mesh.lookAt(targetShip.mesh.position);
+
+      lasers.push({ mesh, vel, life: 1.5 });
+    }
+
     // --- Animation ---
     let animId = 0;
     let time = 0;
@@ -403,6 +515,49 @@ export function GalaxyBackground() {
         const baseOpacity = nebulaSpecs[i]?.opacity ?? 0.05;
         mat.opacity =
           baseOpacity * (0.85 + Math.sin(t * 0.3 + i * 1.5) * 0.15);
+      }
+
+      // Update ships
+      const dt = 0.016;
+      for (const ship of ships) {
+        ship.orbitAngle += ship.orbitSpeed * dt;
+        ship.orbitRadius += Math.sin(t * 0.5 + ship.orbitAngle) * 0.002;
+
+        const tx = Math.cos(ship.orbitAngle) * ship.orbitRadius;
+        const tz = Math.sin(ship.orbitAngle) * ship.orbitRadius;
+        const ty = ship.orbitY + Math.sin(t * 0.3 + ship.orbitAngle * 2) * 0.3;
+
+        const prev = ship.mesh.position.clone();
+        ship.mesh.position.set(tx, ty, tz);
+
+        const dir = ship.mesh.position.clone().sub(prev);
+        if (dir.length() > 0.001) {
+          const angle = Math.atan2(dir.x, dir.z);
+          ship.mesh.rotation.set(-Math.PI / 2, 0, -angle);
+        }
+
+        ship.cooldown -= dt;
+        const targetShip = ships[ship.target];
+        if (targetShip && ship.cooldown <= 0) {
+          const dist = ship.mesh.position.distanceTo(targetShip.mesh.position);
+          if (dist < 6) {
+            fireLaser(ship, targetShip);
+            ship.cooldown = 1.5 + Math.random() * 2.5;
+          }
+        }
+      }
+
+      // Update lasers
+      for (let i = lasers.length - 1; i >= 0; i--) {
+        const laser = lasers[i]!;
+        laser.mesh.position.add(laser.vel);
+        laser.life -= dt;
+        const mat = laser.mesh.material as THREE.MeshBasicMaterial;
+        mat.opacity = Math.max(0, laser.life * 0.9);
+        if (laser.life <= 0) {
+          scene.remove(laser.mesh);
+          lasers.splice(i, 1);
+        }
       }
 
       camera.position.y =
