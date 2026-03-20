@@ -420,6 +420,8 @@ export const useGameStore = create<GameStore>()(
 
       endStrategyPhase: () => {
         const state = get();
+        if (!state.endOfStrategyPhase) return;
+        set({ endOfStrategyPhase: false });
         const slots = state.strategySlots.map((s) => ({ ...s }));
 
         for (const slot of slots) {
