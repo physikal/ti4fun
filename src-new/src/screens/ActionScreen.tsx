@@ -22,7 +22,6 @@ export function ActionScreen() {
   );
   const options = useGameStore((s) => s.options);
   const resolveAction = useGameStore((s) => s.resolveAction);
-  const nextPlayerAction = useGameStore((s) => s.nextPlayerAction);
   const undoAction = useGameStore((s) => s.undoAction);
   const transformFirmament = useGameStore((s) => s.transformFirmament);
   const ralNelUnpass = useGameStore((s) => s.ralNelUnpass);
@@ -77,7 +76,6 @@ export function ActionScreen() {
       pass: false,
       tactical: false,
     });
-    nextPlayerAction();
   };
 
   const activeFaction = activePlayer
