@@ -423,7 +423,7 @@ export const useGameStore = create<GameStore>()(
         const slots = state.strategySlots.map((s) => ({ ...s }));
 
         for (const slot of slots) {
-          if (slot.playerId === null) {
+          if (slot.playerId === null && slot.status === "available") {
             slot.tradeGoods += 1;
             slot.status = "disabled";
           }
