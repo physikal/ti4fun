@@ -40,7 +40,7 @@ function playerName(player: Player | undefined | null): string {
 function createSnapshot(state: GameState): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(state)) {
-    if (key !== "modal" && typeof value !== "function") {
+    if (key !== "modal" && key !== "gameLog" && typeof value !== "function") {
       result[key] = value;
     }
   }
