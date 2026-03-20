@@ -403,6 +403,7 @@ export function GalaxyBackground() {
       vel: THREE.Vector3;
       life: number;
       targetIndex: number;
+      homingStrength: number;
     }
 
     interface ExplosionParticle {
@@ -448,7 +449,7 @@ export function GalaxyBackground() {
     for (let i = 0; i < MAX_SHIPS; i++) {
       const mesh = makeShipMesh(DEFAULT_SHIP_COLORS[i]!);
       mesh.visible = false;
-      mesh.scale.set(3, 3, 3);
+      mesh.scale.set(1.5, 1.5, 1.5);
       const orbitRadius = 2 + Math.random() * 6;
       const orbitAngle = Math.random() * Math.PI * 2;
       const orbitY = (Math.random() - 0.5) * 1.5;
@@ -492,6 +493,7 @@ export function GalaxyBackground() {
       ship: Ship,
       targetShip: Ship,
       targetIdx: number,
+      homingStrength: number,
     ) {
       if (lasers.length >= MAX_LASERS) return;
       const shipMat = ship.mesh.material as THREE.MeshBasicMaterial;
@@ -507,7 +509,13 @@ export function GalaxyBackground() {
 
       mesh.lookAt(targetShip.mesh.position);
 
-      lasers.push({ mesh, vel, life: 1.5, targetIndex: targetIdx });
+      lasers.push({
+        mesh,
+        vel,
+        life: 1.5,
+        targetIndex: targetIdx,
+        homingStrength,
+      });
     }
 
     // --- Explosion particle system (1 draw call) ---
@@ -703,12 +711,14 @@ export function GalaxyBackground() {
             targetShip.mesh.position,
           );
           if (dist < 6) {
-            fireLaser(ship, targetShip, targetIdx);
+            let homing = 0.06;
             let mult = 1.0;
             if (inGame && players[i]) {
               const vpRatio = players[i]!.vp / maxVP;
               mult = 1.0 - vpRatio * 0.6;
+              homing = 0.03 + vpRatio * 0.09;
             }
+            fireLaser(ship, targetShip, targetIdx, homing);
             ship.cooldown = 2.5 * mult + Math.random() * mult;
           }
         }
@@ -724,8 +734,11 @@ export function GalaxyBackground() {
             .subVectors(target.mesh.position, laser.mesh.position)
             .normalize()
             .multiplyScalar(0.15);
-          laser.vel.copy(toTarget);
-          laser.mesh.lookAt(target.mesh.position);
+          laser.vel.lerp(toTarget, laser.homingStrength);
+          laser.vel.normalize().multiplyScalar(0.15);
+          laser.mesh.lookAt(
+            laser.mesh.position.clone().add(laser.vel),
+          );
         }
 
         laser.mesh.position.add(laser.vel);
@@ -740,10 +753,12 @@ export function GalaxyBackground() {
         }
 
         if (hit || laser.life <= 0) {
-          const targetMat =
-            target?.mesh.material as THREE.MeshBasicMaterial;
-          const c = targetMat?.color ?? new THREE.Color(1, 1, 1);
-          spawnExplosion(laser.mesh.position, c.r, c.g, c.b);
+          if (hit) {
+            const targetMat =
+              target?.mesh.material as THREE.MeshBasicMaterial;
+            const c = targetMat?.color ?? new THREE.Color(1, 1, 1);
+            spawnExplosion(laser.mesh.position, c.r, c.g, c.b);
+          }
           scene.remove(laser.mesh);
           lasers.splice(i, 1);
         } else {
