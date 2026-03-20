@@ -448,6 +448,7 @@ export function GalaxyBackground() {
     for (let i = 0; i < MAX_SHIPS; i++) {
       const mesh = makeShipMesh(DEFAULT_SHIP_COLORS[i]!);
       mesh.visible = false;
+      mesh.scale.set(3, 3, 3);
       const orbitRadius = 2 + Math.random() * 6;
       const orbitAngle = Math.random() * Math.PI * 2;
       const orbitY = (Math.random() - 0.5) * 1.5;
@@ -688,8 +689,8 @@ export function GalaxyBackground() {
 
         const dir = ship.mesh.position.clone().sub(prev);
         if (dir.length() > 0.001) {
-          const angle = Math.atan2(dir.x, dir.z);
-          ship.mesh.rotation.set(-Math.PI / 2, 0, -angle);
+          const angle = Math.atan2(-dir.x, -dir.z);
+          ship.mesh.rotation.set(-Math.PI / 2, angle, 0);
         }
 
         ship.cooldown -= dt;
@@ -713,14 +714,24 @@ export function GalaxyBackground() {
         }
       }
 
-      // Update lasers
+      // Update lasers (homing toward target)
       for (let i = lasers.length - 1; i >= 0; i--) {
         const laser = lasers[i]!;
+        const target = ships[laser.targetIndex];
+
+        if (target && target.mesh.visible) {
+          const toTarget = new THREE.Vector3()
+            .subVectors(target.mesh.position, laser.mesh.position)
+            .normalize()
+            .multiplyScalar(0.15);
+          laser.vel.copy(toTarget);
+          laser.mesh.lookAt(target.mesh.position);
+        }
+
         laser.mesh.position.add(laser.vel);
         laser.life -= dt;
 
         let hit = false;
-        const target = ships[laser.targetIndex];
         if (target && target.mesh.visible) {
           const dist = laser.mesh.position.distanceTo(
             target.mesh.position,
