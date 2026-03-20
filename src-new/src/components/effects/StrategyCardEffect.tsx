@@ -27,12 +27,20 @@ function sampleTextPositions(
   const ctx = canvas.getContext("2d");
   if (!ctx) return new Float32Array(0);
 
-  const fontSize = Math.min(width * 0.14, height * 0.3);
+  // Start with a large font, then shrink to fit within 90% of canvas width
+  const label = text.toUpperCase();
+  const maxWidth = cw * 0.9;
+  let fontSize = Math.min(width * 0.14, height * 0.3);
   ctx.font = `900 ${fontSize * scale}px sans-serif`;
+  let measured = ctx.measureText(label).width;
+  if (measured > maxWidth) {
+    fontSize *= maxWidth / measured;
+    ctx.font = `900 ${fontSize * scale}px sans-serif`;
+  }
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#fff";
-  ctx.fillText(text.toUpperCase(), cw / 2, ch / 2);
+  ctx.fillText(label, cw / 2, ch / 2);
 
   const imageData = ctx.getImageData(0, 0, cw, ch);
   const pixels = imageData.data;
