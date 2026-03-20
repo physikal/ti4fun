@@ -586,12 +586,19 @@ export const useGameStore = create<GameStore>()(
           }
 
           if (actions.pass) {
-            slot.status = "passed";
             if (state.playerCount <= 4) {
               const secondSlot = slots.find(
                 (s) => s.secondPickPlayerId === slot.playerId,
               );
-              if (secondSlot) secondSlot.status = "passed";
+              if (
+                slot.status === "played" &&
+                (!secondSlot || secondSlot.status === "played")
+              ) {
+                slot.status = "passed";
+                if (secondSlot) secondSlot.status = "passed";
+              }
+            } else {
+              slot.status = "passed";
             }
           }
 
