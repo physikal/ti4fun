@@ -5,7 +5,8 @@ import { HudButton } from "src/components/layout/HudButton";
 interface StrategyCardEffectProps {
   cardName: string;
   cardColor: string;
-  cardDescription?: string | undefined;
+  primaryText?: string | undefined;
+  secondaryText?: string | undefined;
   onContinue: () => void;
 }
 
@@ -89,7 +90,8 @@ function sampleTextPositions(
 export default function StrategyCardEffect({
   cardName,
   cardColor,
-  cardDescription,
+  primaryText,
+  secondaryText,
   onContinue,
 }: StrategyCardEffectProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -281,12 +283,32 @@ export default function StrategyCardEffect({
         <div ref={containerRef} className="absolute inset-0" />
       )}
       {showContinue && (
-        <div className="absolute inset-x-0 bottom-8 flex flex-col items-center gap-4 screen-fade-in px-6">
-          {cardDescription && (
-            <div className="max-w-lg text-center">
-              <p className="text-sm sm:text-base text-white/90 leading-relaxed">
-                {cardDescription}
-              </p>
+        <div className="absolute inset-x-0 bottom-8 flex flex-col items-center gap-5 screen-fade-in px-6">
+          {(primaryText || secondaryText) && (
+            <div
+              className="max-w-md w-full rounded-xl p-4 sm:p-5 backdrop-blur-sm"
+              style={{
+                background: `linear-gradient(135deg, ${cardColor}15, ${cardColor}08)`,
+                border: `1px solid ${cardColor}40`,
+                boxShadow: `0 0 20px ${cardColor}20`,
+              }}
+            >
+              {primaryText && (
+                <p
+                  className="text-sm sm:text-base font-medium leading-relaxed"
+                  style={{ color: `${cardColor}ee` }}
+                >
+                  {primaryText}
+                </p>
+              )}
+              {secondaryText && (
+                <p className="mt-2 text-xs sm:text-sm text-white/50 leading-relaxed">
+                  <span className="uppercase tracking-wider text-[10px] text-white/30 mr-1">
+                    Secondary:
+                  </span>
+                  {secondaryText}
+                </p>
+              )}
             </div>
           )}
           <HudButton variant="accent" onClick={onContinue}>
