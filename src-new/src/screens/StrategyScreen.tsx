@@ -64,7 +64,7 @@ export function StrategyScreen() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {STRATEGY_CARDS.map((card, index) => {
             const slotIndex = index;
             const slot = strategySlots[slotIndex];
@@ -77,7 +77,7 @@ export function StrategyScreen() {
             return (
               <div
                 key={card.index}
-                className={`hud-panel p-3 flex flex-col gap-2 transition-all ${
+                className={`hud-panel p-4 flex flex-col gap-2.5 transition-all ${
                   isAvailable
                     ? "cursor-pointer hover:hud-glow"
                     : assignedPlayer
@@ -88,7 +88,7 @@ export function StrategyScreen() {
               >
                 <div className="flex items-center justify-between">
                   <span
-                    className="text-xs font-bold px-2 py-0.5 rounded"
+                    className="text-xs font-bold px-2.5 py-1 rounded"
                     style={{
                       backgroundColor: card.color,
                       color: "#fff",
@@ -96,18 +96,18 @@ export function StrategyScreen() {
                   >
                     {card.index}
                   </span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-base font-semibold">
                     {card.name}
                   </span>
                   {slot.tradeGoods > 0 && (
-                    <span className="text-xs text-yellow-400">
+                    <span className="text-sm text-yellow-400">
                       +{slot.tradeGoods} TG
                     </span>
                   )}
                 </div>
 
                 {/* Card description */}
-                <div className="text-[10px] leading-tight text-hud-muted space-y-0.5">
+                <div className="text-xs sm:text-sm leading-snug text-hud-muted space-y-1">
                   <p>{card.primary}</p>
                   <p className="text-hud-muted/60">
                     S: {card.secondary}
