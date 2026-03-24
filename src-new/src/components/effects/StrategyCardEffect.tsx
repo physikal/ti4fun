@@ -5,7 +5,7 @@ import { HudButton } from "src/components/layout/HudButton";
 interface StrategyCardEffectProps {
   cardName: string;
   cardColor: string;
-  cardDescription?: string;
+  cardDescription?: string | undefined;
   onContinue: () => void;
 }
 
