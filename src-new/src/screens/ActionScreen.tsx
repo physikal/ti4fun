@@ -53,7 +53,8 @@ export function ActionScreen() {
   const [cardEffect, setCardEffect] = useState<{
     cardName: string;
     cardColor: string;
-    cardDescription?: string | undefined;
+    primaryText?: string | undefined;
+    secondaryText?: string | undefined;
   } | null>(null);
   const [vpEditing, setVpEditing] = useState(false);
   const pendingActionsRef = useRef(selectedActions);
@@ -94,7 +95,8 @@ export function ActionScreen() {
     let effectCard: {
       cardName: string;
       cardColor: string;
-      cardDescription?: string | undefined;
+      primaryText?: string | undefined;
+      secondaryText?: string | undefined;
     } | null = null;
 
     if (selectedActions.strategy1 && activeSlot) {
@@ -102,18 +104,16 @@ export function ActionScreen() {
       effectCard = {
         cardName: getStrategyName(activeSlot.cardIndex),
         cardColor: getStrategyColor(activeSlot.cardIndex),
-        cardDescription: card
-          ? `${card.primary}\nSecondary: ${card.secondary}`
-          : undefined,
+        primaryText: card?.primary,
+        secondaryText: card?.secondary,
       };
     } else if (selectedActions.strategy2 && secondSlot) {
       const card = getStrategyCard(secondSlot.cardIndex);
       effectCard = {
         cardName: getStrategyName(secondSlot.cardIndex),
         cardColor: getStrategyColor(secondSlot.cardIndex),
-        cardDescription: card
-          ? `${card.primary}\nSecondary: ${card.secondary}`
-          : undefined,
+        primaryText: card?.primary,
+        secondaryText: card?.secondary,
       };
     }
 
@@ -482,7 +482,7 @@ export function ActionScreen() {
             variant="accent"
             onClick={handleResolve}
           >
-            \u2713 {t("done")}
+            {"\u2713"} {t("done")}
           </HudButton>
         </div>
 
@@ -545,7 +545,8 @@ export function ActionScreen() {
           <StrategyCardEffect
             cardName={cardEffect.cardName}
             cardColor={cardEffect.cardColor}
-            cardDescription={cardEffect.cardDescription}
+            primaryText={cardEffect.primaryText}
+            secondaryText={cardEffect.secondaryText}
             onContinue={handleEffectContinue}
           />
         </Suspense>
