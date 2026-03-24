@@ -8,7 +8,6 @@ import type {
   StrategySlot,
   Phase,
   Screen,
-  Locale,
   PlayerColor,
   ActionSnapshot,
   ModalState,
@@ -34,7 +33,7 @@ let logIdCounter = 0;
 
 function playerName(player: Player | undefined | null): string {
   if (!player) return "?";
-  return getPlayerDisplayName(player, "en");
+  return getPlayerDisplayName(player);
 }
 
 function createSnapshot(state: GameState): Record<string, unknown> {
@@ -115,7 +114,7 @@ function createInitialState(): GameState {
     gameElapsedSec: 0,
     currentPlayerTimerSec: 0,
     clockRunning: false,
-    locale: "en",
+    timerPaused: false,
     modal: null,
     gameLog: [],
     options: createDefaultOptions(),
@@ -125,7 +124,6 @@ function createInitialState(): GameState {
 interface GameActions {
   setScreen: (screen: Screen) => void;
   setPhase: (phase: Phase) => void;
-  setLocale: (locale: Locale) => void;
   setModal: (modal: ModalState | null) => void;
   setOptions: (options: Partial<GameOptions>) => void;
   setPlayerCount: (count: number) => void;
@@ -182,6 +180,7 @@ interface GameActions {
   toggleClock: () => void;
   startClock: () => void;
   stopClock: () => void;
+  toggleTimerPause: () => void;
 
   rewindToEntry: (entryId: number) => void;
   resetGame: () => void;
@@ -198,7 +197,6 @@ export const useGameStore = create<GameStore>()(
 
       setScreen: (screen) => set({ screen }),
       setPhase: (phase) => set({ phase }),
-      setLocale: (locale) => set({ locale }),
       setModal: (modal) => set({ modal }),
       setOptions: (opts) =>
         set((s) => ({ options: { ...s.options, ...opts } })),
@@ -247,6 +245,7 @@ export const useGameStore = create<GameStore>()(
           round: 1,
           roundCounter: 1,
           clockRunning: true,
+          timerPaused: false,
           lastActivitySec: 0,
           gameElapsedSec: 0,
           currentPlayerTimerSec: 0,
@@ -378,10 +377,7 @@ export const useGameStore = create<GameStore>()(
           const picker = slot?.playerId !== null
             ? s.players[slot?.playerId ?? 0]
             : null;
-          const cardName = getStrategyName(
-            slot?.cardIndex ?? 0,
-            "en",
-          );
+          const cardName = getStrategyName(slot?.cardIndex ?? 0);
           logAction(
             get,
             set,
@@ -489,14 +485,8 @@ export const useGameStore = create<GameStore>()(
 
       swapStrategies: (slotA, slotB) => {
         const before = get().strategySlots;
-        const nameA = getStrategyName(
-          before[slotA]?.cardIndex ?? 0,
-          "en",
-        );
-        const nameB = getStrategyName(
-          before[slotB]?.cardIndex ?? 0,
-          "en",
-        );
+        const nameA = getStrategyName(before[slotA]?.cardIndex ?? 0);
+        const nameB = getStrategyName(before[slotB]?.cardIndex ?? 0);
         set((state) => {
           const slots = state.strategySlots.map((s) => ({ ...s }));
           const a = slots[slotA];
@@ -561,6 +551,7 @@ export const useGameStore = create<GameStore>()(
             actionHistory: [],
             roundCounter: 1,
             currentPlayerTimerSec: 0,
+            timerPaused: false,
             modal: null,
           };
         }),
@@ -574,10 +565,7 @@ export const useGameStore = create<GameStore>()(
         let actionType = "Tactical";
         if (actions.pass) actionType = "Pass";
         else if (actions.strategy1) {
-          actionType = getStrategyName(
-            activeSlot?.cardIndex ?? 0,
-            "en",
-          );
+          actionType = getStrategyName(activeSlot?.cardIndex ?? 0);
         }
 
         set((state) => {
@@ -638,7 +626,6 @@ export const useGameStore = create<GameStore>()(
           );
 
           // Advance to next player within the same set() call
-          // so we operate on the updated slots
           let nextSlot = state.activeSlotIndex;
           let rounds = state.roundCounter;
           if (!showSpeaker) {
@@ -669,6 +656,7 @@ export const useGameStore = create<GameStore>()(
                 strategySlots: slots,
                 actionHistory: [...state.actionHistory, snapshot],
                 currentPlayerTimerSec: 0,
+                timerPaused: false,
                 players: updatedPlayers,
                 roundCounter: rounds,
                 modal: null,
@@ -680,6 +668,7 @@ export const useGameStore = create<GameStore>()(
             strategySlots: slots,
             actionHistory: [...state.actionHistory, snapshot],
             currentPlayerTimerSec: 0,
+            timerPaused: false,
             players: updatedPlayers,
             modal: showSpeaker ? { type: "speaker" } : null,
             activeSlotIndex: nextSlot,
@@ -731,6 +720,7 @@ export const useGameStore = create<GameStore>()(
             activeSlotIndex: nextSlot,
             roundCounter: rounds,
             currentPlayerTimerSec: 0,
+            timerPaused: false,
           };
         }),
 
@@ -751,6 +741,7 @@ export const useGameStore = create<GameStore>()(
             actionHistory: history,
             strategySlots: slots,
             currentPlayerTimerSec: 0,
+            timerPaused: false,
           };
         });
         logAction(get, set, "Undo action");
@@ -916,6 +907,7 @@ export const useGameStore = create<GameStore>()(
           telepathicPlayerId: null,
           actionHistory: [],
           currentPlayerTimerSec: 0,
+          timerPaused: false,
           modal: { type: "speaker" },
           _currentChooser: speakerId,
         } as Partial<GameState> & { _currentChooser: number });
@@ -927,6 +919,7 @@ export const useGameStore = create<GameStore>()(
           phase: "END",
           screen: "end",
           clockRunning: false,
+          timerPaused: false,
         });
         logAction(get, set, "Game ends");
       },
@@ -941,8 +934,12 @@ export const useGameStore = create<GameStore>()(
           const elapsed = state.gameElapsedSec + 1;
           const result: Partial<GameState> = {
             gameElapsedSec: elapsed,
-            currentPlayerTimerSec: state.currentPlayerTimerSec + 1,
           };
+
+          // Only increment player timer when not paused
+          if (!state.timerPaused) {
+            result.currentPlayerTimerSec = state.currentPlayerTimerSec + 1;
+          }
 
           if (state.phase === "GALAXY") {
             result.lastActivitySec = elapsed;
@@ -972,6 +969,8 @@ export const useGameStore = create<GameStore>()(
         set((state) => ({ clockRunning: !state.clockRunning })),
       startClock: () => set({ clockRunning: true }),
       stopClock: () => set({ clockRunning: false }),
+      toggleTimerPause: () =>
+        set((state) => ({ timerPaused: !state.timerPaused })),
 
       rewindToEntry: (entryId) => {
         const state = get();

@@ -7,7 +7,6 @@ import { getPlayerDisplayName } from "src/store/selectors";
 import { InfluenceKeypad } from "src/components/agenda/InfluenceKeypad";
 
 export function VotingPanel() {
-  const locale = useGameStore((s) => s.locale);
   const players = useGameStore((s) => s.players);
 
   const options = useAgendaStore((s) => s.options);
@@ -31,7 +30,7 @@ export function VotingPanel() {
       ? players[currentPlayerId]
       : undefined;
   const voterName = currentPlayer
-    ? getPlayerDisplayName(currentPlayer, locale)
+    ? getPlayerDisplayName(currentPlayer)
     : "?";
 
   return (
@@ -39,7 +38,7 @@ export function VotingPanel() {
       <HudPanel className="w-full p-4 text-center">
         <span className="text-sm text-hud-muted">
           {voterName}
-          {t("castVote", locale)}
+          {t("castVote")}
         </span>
       </HudPanel>
 
@@ -73,7 +72,7 @@ export function VotingPanel() {
                   {opt.votes.map((v) => {
                     const voter = players[v.playerId];
                     const name = voter
-                      ? getPlayerDisplayName(voter, locale)
+                      ? getPlayerDisplayName(voter)
                       : "?";
                     return (
                       <div
@@ -98,11 +97,11 @@ export function VotingPanel() {
 
       <div className="flex gap-3">
         <HudButton onClick={abstainVote}>
-          {t("abstain", locale)}
+          {t("abstain")}
         </HudButton>
         {selectedOptionIndex !== null && (
           <HudButton variant="accent" onClick={confirmVote}>
-            {t("confirm", locale)} ({pendingInfluence})
+            {t("confirm")} ({pendingInfluence})
           </HudButton>
         )}
       </div>

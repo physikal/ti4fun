@@ -17,8 +17,6 @@ export type Screen =
   | "agenda"
   | "end";
 
-export type Locale = "en" | "fr" | "de" | "ru" | "es" | "zh" | "pl";
-
 export type PlayerColor =
   | "black"
   | "blue"
@@ -90,7 +88,9 @@ export interface ModalState {
     | "options"
     | "transition"
     | "inactivity"
-    | "stopAlert";
+    | "stopAlert"
+    | "combat"
+    | "speakerTiebreak";
   data?: unknown;
 }
 
@@ -121,7 +121,7 @@ export interface GameState {
   gameElapsedSec: number;
   currentPlayerTimerSec: number;
   clockRunning: boolean;
-  locale: Locale;
+  timerPaused: boolean;
   modal: ModalState | null;
   gameLog: GameLogEntry[];
   options: GameOptions;

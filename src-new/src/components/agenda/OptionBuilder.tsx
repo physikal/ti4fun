@@ -1,11 +1,9 @@
-import { useGameStore } from "src/store/gameStore";
 import { useAgendaStore } from "src/store/agendaStore";
 import { HudPanel } from "src/components/layout/HudPanel";
 import { HudButton } from "src/components/layout/HudButton";
 import { t } from "src/i18n/index";
 
 export function OptionBuilder() {
-  const locale = useGameStore((s) => s.locale);
   const options = useAgendaStore((s) => s.options);
   const customInput = useAgendaStore((s) => s.customOptionInput);
   const setCustomInput = useAgendaStore(
@@ -23,7 +21,7 @@ export function OptionBuilder() {
   return (
     <HudPanel className="flex flex-col gap-4 p-6 w-full max-w-md">
       <h3 className="text-lg font-bold text-hud-accent">
-        {t("addOption", locale)}
+        {t("addOption")}
       </h3>
 
       <form onSubmit={handleSubmit} className="flex gap-2">
@@ -31,7 +29,7 @@ export function OptionBuilder() {
           type="text"
           value={customInput}
           onChange={(e) => setCustomInput(e.target.value)}
-          placeholder={t("addOption", locale)}
+          placeholder={t("addOption")}
           className="flex-1 px-3 py-2 bg-black/40 border border-hud-border/40 rounded text-sm text-white placeholder-hud-muted focus:outline-none focus:border-hud-accent/60"
         />
         <HudButton size="sm" type="submit">
@@ -64,7 +62,7 @@ export function OptionBuilder() {
         onClick={beginVoting}
         disabled={options.length < 2}
       >
-        {t("startVoting", locale)}
+        {t("startVoting")}
       </HudButton>
     </HudPanel>
   );

@@ -11,7 +11,6 @@ interface PhaseHeaderProps {
 
 export function PhaseHeader({ onBack }: PhaseHeaderProps) {
   const [logOpen, setLogOpen] = useState(false);
-  const locale = useGameStore((s) => s.locale);
   const phase = useGameStore((s) => s.phase);
   const round = useGameStore((s) => s.round);
   const gameElapsedSec = useGameStore((s) => s.gameElapsedSec);
@@ -21,17 +20,17 @@ export function PhaseHeader({ onBack }: PhaseHeaderProps) {
   const phaseLabel = (() => {
     switch (phase) {
       case "GALAXY":
-        return t("phaseGalaxy", locale);
+        return t("phaseGalaxy");
       case "STRATEGY":
-        return t("phaseStrategy", locale);
+        return t("phaseStrategy");
       case "ACTION":
-        return t("phaseAction", locale);
+        return t("phaseAction");
       case "STATUS":
-        return t("phaseStatus", locale);
+        return t("phaseStatus");
       case "AGENDA":
-        return t("phaseAgenda", locale);
+        return t("phaseAgenda");
       case "END":
-        return t("phaseEnd", locale);
+        return t("phaseEnd");
       default:
         return "";
     }
@@ -46,12 +45,12 @@ export function PhaseHeader({ onBack }: PhaseHeaderProps) {
           onClick={onBack}
           className="text-sm text-hud-muted hover:text-hud-text transition-colors px-2 py-1 -ml-1"
         >
-          ← {t("back", locale)}
+          ← {t("back")}
         </button>
       )}
       <div className="flex-1 flex items-center justify-center gap-3">
         <span className="text-xs text-hud-muted">
-          {t("round", locale)} {round}
+          {t("round")} {round}
         </span>
         <span className="text-sm font-bold text-hud-accent">
           {phaseLabel}

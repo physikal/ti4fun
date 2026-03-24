@@ -4,6 +4,7 @@ import { VoteTypePicker } from "src/components/agenda/VoteTypePicker";
 import { OptionBuilder } from "src/components/agenda/OptionBuilder";
 import { VotingPanel } from "src/components/agenda/VotingPanel";
 import { VoteResults } from "src/components/agenda/VoteResults";
+import { SpeakerTiebreak } from "src/components/agenda/SpeakerTiebreak";
 
 export function ComplexVoting() {
   const players = useGameStore((s) => s.players);
@@ -47,6 +48,10 @@ export function ComplexVoting() {
 
   if (step === "voting") {
     return <VotingPanel />;
+  }
+
+  if (step === "speakerTiebreak") {
+    return <SpeakerTiebreak />;
   }
 
   if (step === "results") {

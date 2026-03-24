@@ -8,7 +8,6 @@ import { getInitiativeOrder } from "src/store/selectors";
 import type { Player } from "src/store/types";
 
 export function StatusScreen() {
-  const locale = useGameStore((s) => s.locale);
   const state = useGameStore.getState();
   const players = useGameStore((s) => s.players);
   const mecatolScored = useGameStore((s) => s.mecatolScored);
@@ -47,7 +46,7 @@ export function StatusScreen() {
         {/* Status Checklist */}
         <HudPanel>
           <h3 className="text-sm font-bold text-hud-accent mb-2">
-            {t("statusChecklist", locale)}
+            {t("statusChecklist")}
           </h3>
           <ol className="space-y-1.5 text-sm text-hud-muted list-decimal list-inside">
             <li>Score objectives</li>
@@ -64,7 +63,7 @@ export function StatusScreen() {
         {/* VP Tracker */}
         <HudPanel>
           <h3 className="text-sm font-bold text-hud-accent mb-2">
-            {t("vp", locale)}
+            {t("vp")}
           </h3>
           <div className="flex flex-col gap-2">
             {players.map((player) => (
@@ -78,12 +77,12 @@ export function StatusScreen() {
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <h3 className="text-sm font-bold text-hud-accent">
-                {t("mecatolToggle", locale)}
+                {t("mecatolToggle")}
               </h3>
               <p className="text-xs text-hud-muted truncate">
                 {mecatolScored
-                  ? t("custodiansLeft", locale)
-                  : t("custodiansStill", locale)}
+                  ? t("custodiansLeft")
+                  : t("custodiansStill")}
               </p>
             </div>
             <HudButton
@@ -100,11 +99,11 @@ export function StatusScreen() {
       <div className="flex gap-3 justify-center p-3 border-t border-hud-border/20 shrink-0">
         {anyPlayerAtVP && (
           <HudButton variant="danger" onClick={goToEndGame}>
-            {t("endGame", locale)}
+            {t("endGame")}
           </HudButton>
         )}
         <HudButton variant="accent" onClick={statusNext}>
-          {t("next", locale)} →
+          {t("next")} →
         </HudButton>
       </div>
     </div>

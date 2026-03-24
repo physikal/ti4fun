@@ -12,7 +12,6 @@ export function GameMenu() {
   const menuRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const locale = useGameStore((s) => s.locale);
   const resetGame = useGameStore((s) => s.resetGame);
   const exportGame = useGameStore((s) => s.exportGame);
   const importGame = useGameStore((s) => s.importGame);
@@ -129,7 +128,7 @@ export function GameMenu() {
             }}
           >
             <MenuItem onClick={handleNewGame}>
-              {confirmNew ? "Confirm New Game?" : t("newGame", locale)}
+              {confirmNew ? "Confirm New Game?" : t("newGame")}
             </MenuItem>
             <Divider />
             <MenuItem onClick={handleExport}>Save / Export</MenuItem>
