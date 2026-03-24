@@ -17,7 +17,8 @@ type ComplexVotingStep =
   | "pickType"
   | "addOptions"
   | "voting"
-  | "results";
+  | "results"
+  | "speakerTiebreak";
 
 interface AgendaState {
   active: boolean;
@@ -30,6 +31,7 @@ interface AgendaState {
   pendingInfluence: number;
   agendaNumber: 1 | 2;
   customOptionInput: string;
+  tiedOptionIndices: number[];
 }
 
 interface AgendaActions {
@@ -52,6 +54,7 @@ interface AgendaActions {
   resolveVote: () => void;
   nextAgenda: () => void;
   resetAgenda: () => void;
+  speakerBreakTie: (optionIndex: number) => void;
 }
 
 export type AgendaStore = AgendaState & AgendaActions;
@@ -68,15 +71,17 @@ function createInitialAgendaState(): AgendaState {
     pendingInfluence: 0,
     agendaNumber: 1,
     customOptionInput: "",
+    tiedOptionIndices: [],
   };
 }
 
+// Speaker votes LAST: build order starting from player after speaker
 function buildVoterOrder(
   playerCount: number,
   speakerId: number,
 ): number[] {
   const order: number[] = [];
-  for (let i = 0; i < playerCount; i++) {
+  for (let i = 1; i <= playerCount; i++) {
     order.push((speakerId + i) % playerCount);
   }
   return order;
@@ -207,13 +212,50 @@ export const useAgendaStore = create<AgendaStore>()((set, get) => ({
     const nextVoterIndex = state.currentVoterIndex + 1;
     const allVoted = nextVoterIndex >= state.voterOrder.length;
 
-    set({
-      options: newOptions,
-      currentVoterIndex: nextVoterIndex,
-      selectedOptionIndex: null,
-      pendingInfluence: 0,
-      step: allVoted ? "results" : "voting",
-    });
+    if (allVoted) {
+      // Check for ties
+      let maxInfluence = 0;
+      for (const opt of newOptions) {
+        if (opt.totalInfluence > maxInfluence) {
+          maxInfluence = opt.totalInfluence;
+        }
+      }
+      const tiedIndices: number[] = [];
+      if (maxInfluence > 0) {
+        for (let i = 0; i < newOptions.length; i++) {
+          if (newOptions[i]!.totalInfluence === maxInfluence) {
+            tiedIndices.push(i);
+          }
+        }
+      }
+
+      if (tiedIndices.length > 1) {
+        set({
+          options: newOptions,
+          currentVoterIndex: nextVoterIndex,
+          selectedOptionIndex: null,
+          pendingInfluence: 0,
+          step: "speakerTiebreak",
+          tiedOptionIndices: tiedIndices,
+        });
+      } else {
+        set({
+          options: newOptions,
+          currentVoterIndex: nextVoterIndex,
+          selectedOptionIndex: null,
+          pendingInfluence: 0,
+          step: "results",
+          tiedOptionIndices: [],
+        });
+      }
+    } else {
+      set({
+        options: newOptions,
+        currentVoterIndex: nextVoterIndex,
+        selectedOptionIndex: null,
+        pendingInfluence: 0,
+      });
+    }
   },
 
   abstainVote: () => {
@@ -221,11 +263,53 @@ export const useAgendaStore = create<AgendaStore>()((set, get) => ({
     const nextVoterIndex = state.currentVoterIndex + 1;
     const allVoted = nextVoterIndex >= state.voterOrder.length;
 
+    if (allVoted) {
+      let maxInfluence = 0;
+      for (const opt of state.options) {
+        if (opt.totalInfluence > maxInfluence) {
+          maxInfluence = opt.totalInfluence;
+        }
+      }
+      const tiedIndices: number[] = [];
+      if (maxInfluence > 0) {
+        for (let i = 0; i < state.options.length; i++) {
+          if (state.options[i]!.totalInfluence === maxInfluence) {
+            tiedIndices.push(i);
+          }
+        }
+      }
+
+      if (tiedIndices.length > 1) {
+        set({
+          currentVoterIndex: nextVoterIndex,
+          selectedOptionIndex: null,
+          pendingInfluence: 0,
+          step: "speakerTiebreak",
+          tiedOptionIndices: tiedIndices,
+        });
+      } else {
+        set({
+          currentVoterIndex: nextVoterIndex,
+          selectedOptionIndex: null,
+          pendingInfluence: 0,
+          step: "results",
+          tiedOptionIndices: [],
+        });
+      }
+    } else {
+      set({
+        currentVoterIndex: nextVoterIndex,
+        selectedOptionIndex: null,
+        pendingInfluence: 0,
+      });
+    }
+  },
+
+  speakerBreakTie: (optionIndex) => {
     set({
-      currentVoterIndex: nextVoterIndex,
-      selectedOptionIndex: null,
-      pendingInfluence: 0,
-      step: allVoted ? "results" : "voting",
+      step: "results",
+      tiedOptionIndices: [],
+      selectedOptionIndex: optionIndex,
     });
   },
 
@@ -240,6 +324,7 @@ export const useAgendaStore = create<AgendaStore>()((set, get) => ({
         selectedOptionIndex: null,
         pendingInfluence: 0,
         agendaNumber: 2,
+        tiedOptionIndices: [],
       });
     } else {
       set(createInitialAgendaState());
@@ -256,6 +341,7 @@ export const useAgendaStore = create<AgendaStore>()((set, get) => ({
         selectedOptionIndex: null,
         pendingInfluence: 0,
         agendaNumber: 2,
+        tiedOptionIndices: [],
       });
     }
   },

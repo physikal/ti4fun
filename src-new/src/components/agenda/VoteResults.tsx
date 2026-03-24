@@ -10,10 +10,12 @@ interface VoteResultsProps {
 }
 
 export function VoteResults({ onResolve }: VoteResultsProps) {
-  const locale = useGameStore((s) => s.locale);
   const players = useGameStore((s) => s.players);
   const options = useAgendaStore((s) => s.options);
   const agendaNumber = useAgendaStore((s) => s.agendaNumber);
+  const speakerPickedIndex = useAgendaStore(
+    (s) => s.selectedOptionIndex,
+  );
 
   let maxInfluence = 0;
   for (const opt of options) {
@@ -25,25 +27,27 @@ export function VoteResults({ onResolve }: VoteResultsProps) {
   const winnerCount = options.filter(
     (o) => o.totalInfluence === maxInfluence,
   ).length;
-  const isTied = winnerCount > 1 && maxInfluence > 0;
+  const wasTied = winnerCount > 1 && maxInfluence > 0;
+  const speakerBroke = wasTied && speakerPickedIndex !== null;
 
   return (
     <div className="flex flex-col items-center gap-4 w-full max-w-lg">
       <h3 className="text-lg font-bold text-hud-accent">
-        {t("results", locale)}
+        {t("results")}
       </h3>
 
-      {isTied && (
-        <span className="text-sm font-bold text-yellow-400 uppercase">
-          {t("tied", locale)}
+      {speakerBroke && (
+        <span className="text-sm font-bold text-yellow-400">
+          Speaker broke the tie
         </span>
       )}
 
       <div className="grid grid-cols-2 gap-3 w-full">
-        {options.map((opt) => {
-          const isWinner =
-            opt.totalInfluence === maxInfluence &&
-            maxInfluence > 0;
+        {options.map((opt, i) => {
+          const isWinner = speakerBroke
+            ? i === speakerPickedIndex
+            : opt.totalInfluence === maxInfluence && maxInfluence > 0;
+
           return (
             <HudPanel
               key={opt.label}
@@ -64,9 +68,9 @@ export function VoteResults({ onResolve }: VoteResultsProps) {
               >
                 {opt.totalInfluence}
               </span>
-              {isWinner && !isTied && (
+              {isWinner && (
                 <span className="text-xs font-bold text-green-400 uppercase">
-                  {t("winner", locale)}
+                  {speakerBroke ? "Speaker's Choice" : t("winner")}
                 </span>
               )}
               {opt.votes.length > 0 && (
@@ -74,7 +78,7 @@ export function VoteResults({ onResolve }: VoteResultsProps) {
                   {opt.votes.map((v) => {
                     const voter = players[v.playerId];
                     const name = voter
-                      ? getPlayerDisplayName(voter, locale)
+                      ? getPlayerDisplayName(voter)
                       : "?";
                     return (
                       <div
@@ -95,8 +99,8 @@ export function VoteResults({ onResolve }: VoteResultsProps) {
 
       <HudButton variant="accent" onClick={onResolve}>
         {agendaNumber === 1
-          ? `${t("next", locale)}: ${t("secondAgenda", locale)}`
-          : `${t("done", locale)} \u2192`}
+          ? `${t("next")}: ${t("secondAgenda")}`
+          : `${t("done")} \u2192`}
       </HudButton>
     </div>
   );

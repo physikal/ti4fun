@@ -1,7 +1,6 @@
 import type { Player } from "src/store/types";
 import { PLAYER_COLOR_HEX } from "src/store/types";
 import { FACTIONS } from "src/data/factions";
-import { useGameStore } from "src/store/gameStore";
 import { getPlayerDisplayName } from "src/store/selectors";
 
 interface PlayerBadgeProps {
@@ -19,10 +18,9 @@ export function PlayerBadge({
   compact = false,
   onClick,
 }: PlayerBadgeProps) {
-  const locale = useGameStore((s) => s.locale);
   const faction = FACTIONS[player.factionId];
   const color = PLAYER_COLOR_HEX[player.color];
-  const displayName = getPlayerDisplayName(player, locale);
+  const displayName = getPlayerDisplayName(player);
 
   return (
     <div
@@ -50,7 +48,7 @@ export function PlayerBadge({
         </span>
         {faction && (
           <span className="text-[10px] text-hud-muted truncate">
-            {faction.names[locale]}
+            {faction.name}
           </span>
         )}
         {passed && (

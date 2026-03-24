@@ -7,7 +7,6 @@ import { SimpleVoting } from "src/components/agenda/SimpleVoting";
 import { ComplexVoting } from "src/components/agenda/ComplexVoting";
 
 export function AgendaScreen() {
-  const locale = useGameStore((s) => s.locale);
   const simpleAgendaStep = useGameStore((s) => s.simpleAgendaStep);
   const simpleAgendaBack = useGameStore((s) => s.simpleAgendaBack);
   const complexActive = useAgendaStore((s) => s.active);
@@ -17,11 +16,11 @@ export function AgendaScreen() {
 
   const agendaLabel = complexActive
     ? agendaNumber === 1
-      ? t("firstAgenda", locale)
-      : t("secondAgenda", locale)
+      ? t("firstAgenda")
+      : t("secondAgenda")
     : simpleAgendaStep === 1
-      ? t("firstAgenda", locale)
-      : t("secondAgenda", locale);
+      ? t("firstAgenda")
+      : t("secondAgenda");
 
   function handleBack() {
     if (complexActive) {
@@ -42,12 +41,12 @@ export function AgendaScreen() {
           </h2>
           {!complexActive && (
             <HudButton size="sm" onClick={startComplexVote}>
-              {t("complexVoting", locale)}
+              {t("complexVoting")}
             </HudButton>
           )}
           {complexActive && (
             <HudButton size="sm" onClick={exitComplexVote}>
-              {t("simpleVoting", locale)}
+              {t("simpleVoting")}
             </HudButton>
           )}
         </div>

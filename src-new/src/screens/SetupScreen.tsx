@@ -21,7 +21,6 @@ interface PlayerSetup {
 }
 
 export function SetupScreen() {
-  const locale = useGameStore((s) => s.locale);
   const playerCount = useGameStore((s) => s.playerCount);
   const setPlayerCount = useGameStore((s) => s.setPlayerCount);
   const setScreen = useGameStore((s) => s.setScreen);
@@ -108,12 +107,12 @@ export function SetupScreen() {
 
       <div className="text-center mt-12">
         <h2 className="text-2xl font-bold text-hud-accent">
-          {t("players", locale)}
+          {t("players")}
         </h2>
       </div>
 
       <div className="flex items-center justify-center gap-4">
-        <span className="text-hud-muted text-sm">{t("players", locale)}:</span>
+        <span className="text-hud-muted text-sm">{t("players")}:</span>
         <input
           type="range"
           min={3}
@@ -162,7 +161,7 @@ export function SetupScreen() {
                       className="w-12 h-12 object-contain"
                     />
                     <span className="text-sm font-semibold text-center">
-                      {getFactionName(faction.id, locale)}
+                      {getFactionName(faction.id)}
                     </span>
                     {setup?.name && (
                       <span className="text-xs text-hud-muted">
@@ -172,7 +171,7 @@ export function SetupScreen() {
                   </>
                 ) : (
                   <span className="text-hud-muted text-sm">
-                    {t("setPlayer", locale)}
+                    {t("setPlayer")}
                   </span>
                 )}
               </div>
@@ -187,7 +186,7 @@ export function SetupScreen() {
           disabled={!allConfigured}
           onClick={handleStartGame}
         >
-          {t("next", locale)} →
+          {t("next")} →
         </HudButton>
       </div>
 
@@ -199,7 +198,7 @@ export function SetupScreen() {
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-xs text-hud-muted uppercase tracking-wider">
-              {t("playerName", locale)}
+              {t("playerName")}
             </label>
             <input
               type="text"
@@ -212,7 +211,7 @@ export function SetupScreen() {
 
           <div>
             <label className="text-xs text-hud-muted uppercase tracking-wider">
-              {t("color", locale)}
+              {t("color")}
             </label>
             <div className="flex flex-wrap gap-2 mt-1">
               {PLAYER_COLORS.map((c) => {
@@ -238,7 +237,7 @@ export function SetupScreen() {
 
           <div>
             <label className="text-xs text-hud-muted uppercase tracking-wider">
-              {t("faction", locale)}
+              {t("faction")}
             </label>
             <div className="max-h-60 overflow-y-auto mt-1 grid grid-cols-2 gap-1">
               {FACTIONS.filter((f) => isSelectableFaction(f.id)).map((f) => {
@@ -263,7 +262,7 @@ export function SetupScreen() {
                       className="w-5 h-5 object-contain"
                     />
                     <span className="truncate">
-                      {getFactionName(f.id, locale)}
+                      {getFactionName(f.id)}
                     </span>
                   </button>
                 );
@@ -292,7 +291,7 @@ export function SetupScreen() {
             disabled={tempName.trim().length === 0 || tempFaction === null || tempColor === null}
             className="w-full"
           >
-            {t("confirm", locale)}
+            {t("confirm")}
           </HudButton>
         </div>
       </Modal>

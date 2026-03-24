@@ -5,7 +5,6 @@ import { t } from "src/i18n/index";
 import { useFullscreen } from "src/hooks/useFullscreen";
 
 export function OptionsScreen() {
-  const locale = useGameStore((s) => s.locale);
   const options = useGameStore((s) => s.options);
   const setOptions = useGameStore((s) => s.setOptions);
   const startGame = useGameStore((s) => s.startGame);
@@ -20,12 +19,12 @@ export function OptionsScreen() {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-6 p-6 screen-fade-in">
       <h2 className="text-2xl font-bold text-hud-accent">
-        {t("options", locale)}
+        {t("options")}
       </h2>
 
       <HudPanel className="w-full max-w-md flex flex-col gap-4">
         <label className="flex items-center justify-between">
-          <span className="text-sm">{t("fullscreen", locale)}</span>
+          <span className="text-sm">{t("fullscreen")}</span>
           <input
             type="checkbox"
             checked={options.fullscreen}
@@ -38,7 +37,7 @@ export function OptionsScreen() {
         </label>
 
         <label className="flex items-center justify-between">
-          <span className="text-sm">{t("resetTimer", locale)}</span>
+          <span className="text-sm">{t("resetTimer")}</span>
           <input
             type="checkbox"
             checked={options.resetTimerPerTurn}
@@ -50,7 +49,7 @@ export function OptionsScreen() {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-sm">{t("inactivityTimer", locale)}</span>
+          <span className="text-sm">{t("inactivityTimer")}</span>
           <input
             type="range"
             min={5}
@@ -67,7 +66,7 @@ export function OptionsScreen() {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-sm">{t("vpLimit", locale)}</span>
+          <span className="text-sm">{t("vpLimit")}</span>
           <input
             type="range"
             min={6}
@@ -85,7 +84,7 @@ export function OptionsScreen() {
       </HudPanel>
 
       <HudButton size="lg" onClick={handleConfirm}>
-        {t("startGame", locale)}
+        {t("startGame")}
       </HudButton>
     </div>
   );

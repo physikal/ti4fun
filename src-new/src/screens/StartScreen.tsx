@@ -3,21 +3,8 @@ import { HudPanel } from "src/components/layout/HudPanel";
 import { GameMenu } from "src/components/layout/GameMenu";
 import { useGameStore } from "src/store/gameStore";
 import { t } from "src/i18n/index";
-import type { Locale } from "src/store/types";
-
-const LOCALES: { code: Locale; label: string }[] = [
-  { code: "en", label: "English" },
-  { code: "fr", label: "Français" },
-  { code: "de", label: "Deutsch" },
-  { code: "ru", label: "Русский" },
-  { code: "es", label: "Español" },
-  { code: "zh", label: "中文" },
-  { code: "pl", label: "Polski" },
-];
 
 export function StartScreen() {
-  const locale = useGameStore((s) => s.locale);
-  const setLocale = useGameStore((s) => s.setLocale);
   const setScreen = useGameStore((s) => s.setScreen);
   const phase = useGameStore((s) => s.phase);
 
@@ -43,7 +30,7 @@ export function StartScreen() {
           className="w-full"
           onClick={() => setScreen("setup")}
         >
-          {t("newGame", locale)}
+          {t("newGame")}
         </HudButton>
         <HudButton
           size="lg"
@@ -71,25 +58,9 @@ export function StartScreen() {
             }
           }}
         >
-          {t("continueGame", locale)}
+          {t("continueGame")}
         </HudButton>
       </HudPanel>
-
-      <div className="flex flex-wrap gap-2 justify-center">
-        {LOCALES.map((l) => (
-          <button
-            key={l.code}
-            onClick={() => setLocale(l.code)}
-            className={`px-3 py-1.5 rounded text-sm transition-colors ${
-              locale === l.code
-                ? "bg-hud-accent/20 text-hud-accent border border-hud-accent"
-                : "text-hud-muted hover:text-hud-text border border-transparent"
-            }`}
-          >
-            {l.label}
-          </button>
-        ))}
-      </div>
 
       <div className="text-hud-muted text-xs">v8.0</div>
     </div>

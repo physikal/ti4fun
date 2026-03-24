@@ -5,6 +5,7 @@ import { HudButton } from "src/components/layout/HudButton";
 interface StrategyCardEffectProps {
   cardName: string;
   cardColor: string;
+  cardDescription?: string;
   onContinue: () => void;
 }
 
@@ -88,6 +89,7 @@ function sampleTextPositions(
 export default function StrategyCardEffect({
   cardName,
   cardColor,
+  cardDescription,
   onContinue,
 }: StrategyCardEffectProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -279,7 +281,14 @@ export default function StrategyCardEffect({
         <div ref={containerRef} className="absolute inset-0" />
       )}
       {showContinue && (
-        <div className="absolute inset-x-0 bottom-12 flex justify-center screen-fade-in">
+        <div className="absolute inset-x-0 bottom-8 flex flex-col items-center gap-4 screen-fade-in px-6">
+          {cardDescription && (
+            <div className="max-w-lg text-center">
+              <p className="text-sm sm:text-base text-white/90 leading-relaxed">
+                {cardDescription}
+              </p>
+            </div>
+          )}
           <HudButton variant="accent" onClick={onContinue}>
             Continue
           </HudButton>

@@ -1,13 +1,10 @@
 import type { GameState, Player, StrategySlot } from "src/store/types";
 import { FACTIONS, NAALU_ID } from "src/data/factions";
 
-export function getPlayerDisplayName(
-  player: Player,
-  locale: GameState["locale"],
-): string {
+export function getPlayerDisplayName(player: Player): string {
   if (player.name.length > 0) return player.name;
   const faction = FACTIONS[player.factionId];
-  return faction ? faction.names[locale] : "Unknown";
+  return faction ? faction.name : "Unknown";
 }
 
 export function getActivePlayerFromSlot(

@@ -15,7 +15,6 @@ import { getPlayerDisplayName } from "src/store/selectors";
 import type { GameState } from "src/store/types";
 
 export function StrategyScreen() {
-  const locale = useGameStore((s) => s.locale);
   const players = useGameStore((s) => s.players);
   const strategySlots = useGameStore((s) => s.strategySlots);
   const endOfStrategyPhase = useGameStore((s) => s.endOfStrategyPhase);
@@ -52,9 +51,9 @@ export function StrategyScreen() {
         {currentPlayer && !endOfStrategyPhase && (
           <span>
             <span className="text-hud-text font-semibold">
-              {getPlayerDisplayName(currentPlayer, locale)}
+              {getPlayerDisplayName(currentPlayer)}
             </span>
-            {t("selectStrategy", locale)}
+            {t("selectStrategy")}
           </span>
         )}
         {endOfStrategyPhase && (
@@ -78,7 +77,7 @@ export function StrategyScreen() {
             return (
               <div
                 key={card.index}
-                className={`hud-panel p-4 flex flex-col gap-2 transition-all ${
+                className={`hud-panel p-3 flex flex-col gap-2 transition-all ${
                   isAvailable
                     ? "cursor-pointer hover:hud-glow"
                     : assignedPlayer
@@ -98,13 +97,21 @@ export function StrategyScreen() {
                     {card.index}
                   </span>
                   <span className="text-sm font-semibold">
-                    {getStrategyName(card.index, locale)}
+                    {card.name}
                   </span>
                   {slot.tradeGoods > 0 && (
                     <span className="text-xs text-yellow-400">
                       +{slot.tradeGoods} TG
                     </span>
                   )}
+                </div>
+
+                {/* Card description */}
+                <div className="text-[10px] leading-tight text-hud-muted space-y-0.5">
+                  <p>{card.primary}</p>
+                  <p className="text-hud-muted/60">
+                    S: {card.secondary}
+                  </p>
                 </div>
 
                 {assignedPlayer && (
@@ -119,12 +126,12 @@ export function StrategyScreen() {
       <div className="flex items-center justify-center gap-3 p-3 border-t border-hud-border/20 shrink-0">
         {strategyHistory.length > 0 && !endOfStrategyPhase && (
           <HudButton size="sm" onClick={undoStrategy}>
-            ← {t("undo", locale)}
+            ← {t("undo")}
           </HudButton>
         )}
         {endOfStrategyPhase && (
           <HudButton size="lg" variant="accent" onClick={endStrategyPhase}>
-            {t("next", locale)} →
+            {t("next")} →
           </HudButton>
         )}
       </div>
@@ -132,7 +139,7 @@ export function StrategyScreen() {
       {/* Speaker Modal */}
       <Modal
         open={modal?.type === "speaker"}
-        title={t("pickSpeaker", locale)}
+        title={t("pickSpeaker")}
       >
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-2">
@@ -150,13 +157,13 @@ export function StrategyScreen() {
           </div>
           <div className="flex gap-2 justify-center">
             <HudButton size="sm" onClick={randomSpeaker}>
-              {t("random", locale)}
+              {t("random")}
             </HudButton>
             <HudButton
               disabled={speakerId === null}
               onClick={confirmSpeaker}
             >
-              {t("confirm", locale)}
+              {t("confirm")}
             </HudButton>
           </div>
         </div>
@@ -165,7 +172,7 @@ export function StrategyScreen() {
       {/* Telepathic Modal (Naalu) */}
       <Modal
         open={modal?.type === "telepathic"}
-        title={t("telepathicPick", locale)}
+        title={t("telepathicPick")}
       >
         <div className="grid grid-cols-2 gap-2">
           {players
@@ -220,7 +227,7 @@ export function StrategyScreen() {
                       }}
                     >
                       <div className="text-xs font-bold text-center mb-1" style={{ color }}>
-                        {getStrategyName(slot.cardIndex, locale)}
+                        {getStrategyName(slot.cardIndex)}
                       </div>
                       {player && <PlayerBadge player={player} compact />}
                     </div>
@@ -235,7 +242,7 @@ export function StrategyScreen() {
                 setSwapFirst(null);
               }}
             >
-              {t("done", locale)}
+              {t("done")}
             </HudButton>
           </div>
         ) : (
@@ -248,7 +255,7 @@ export function StrategyScreen() {
                   setSwapFirst(null);
                 }}
               >
-                {hasHacan ? t("quantumSwap", locale) : t("acquiescence", locale)}
+                {hasHacan ? t("quantumSwap") : t("acquiescence")}
               </HudButton>
             )}
             {hasNaalu && (
@@ -273,7 +280,7 @@ export function StrategyScreen() {
                 }
               }}
             >
-              {hasNaalu ? t("next", locale) + " →" : t("done", locale)}
+              {hasNaalu ? t("next") + " →" : t("done")}
             </HudButton>
           </div>
         )}
