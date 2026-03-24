@@ -53,7 +53,7 @@ export function ActionScreen() {
   const [cardEffect, setCardEffect] = useState<{
     cardName: string;
     cardColor: string;
-    cardDescription?: string;
+    cardDescription?: string | undefined;
   } | null>(null);
   const [vpEditing, setVpEditing] = useState(false);
   const pendingActionsRef = useRef(selectedActions);
@@ -94,7 +94,7 @@ export function ActionScreen() {
     let effectCard: {
       cardName: string;
       cardColor: string;
-      cardDescription?: string;
+      cardDescription?: string | undefined;
     } | null = null;
 
     if (selectedActions.strategy1 && activeSlot) {
