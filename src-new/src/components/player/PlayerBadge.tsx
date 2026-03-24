@@ -47,7 +47,7 @@ export function PlayerBadge({
           {displayName}
         </span>
         {faction && (
-          <span className="text-[10px] text-hud-muted truncate">
+          <span className="text-xs text-hud-muted truncate">
             {faction.name}
           </span>
         )}

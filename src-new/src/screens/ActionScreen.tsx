@@ -315,7 +315,7 @@ export function ActionScreen() {
             <button
               type="button"
               onClick={() => setVpEditing((v) => !v)}
-              className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+              className={`text-xs px-3 py-1 rounded border transition-colors ${
                 vpEditing
                   ? "border-hud-accent text-hud-accent bg-hud-accent/10"
                   : "border-hud-border/40 text-hud-muted hover:text-hud-text"
@@ -339,7 +339,7 @@ export function ActionScreen() {
                         PLAYER_COLOR_HEX[player.color],
                     }}
                   />
-                  <span className="flex-1 min-w-0 truncate text-xs">
+                  <span className="flex-1 min-w-0 truncate text-sm">
                     {getPlayerDisplayName(player)}
                   </span>
                   {vpEditing ? (
@@ -347,27 +347,27 @@ export function ActionScreen() {
                       <button
                         type="button"
                         onClick={() => setVP(player.id, -1)}
-                        className="w-6 h-6 rounded bg-black/30 border border-hud-border/50 text-xs hover:bg-white/10"
+                        className="w-7 h-7 rounded bg-black/30 border border-hud-border/50 text-sm hover:bg-white/10"
                       >
                         -
                       </button>
-                      <span className="w-6 text-center font-mono font-bold text-xs">
+                      <span className="w-7 text-center font-mono font-bold text-sm">
                         {player.vp}
                       </span>
                       <button
                         type="button"
                         onClick={() => setVP(player.id, 1)}
-                        className="w-6 h-6 rounded bg-black/30 border border-hud-border/50 text-xs hover:bg-white/10"
+                        className="w-7 h-7 rounded bg-black/30 border border-hud-border/50 text-sm hover:bg-white/10"
                       >
                         +
                       </button>
                     </div>
                   ) : (
-                    <span className="font-mono font-bold text-xs text-hud-accent shrink-0 w-6 text-center">
+                    <span className="font-mono font-bold text-sm text-hud-accent shrink-0 w-7 text-center">
                       {player.vp}
                     </span>
                   )}
-                  <span className="font-mono text-[10px] text-hud-muted shrink-0 w-16 text-right">
+                  <span className="font-mono text-xs text-hud-muted shrink-0 w-16 text-right">
                     {formatTime(Math.floor(player.clockMs / 1000))}
                   </span>
                 </div>
