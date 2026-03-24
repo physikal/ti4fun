@@ -86,9 +86,9 @@ export function StrategyScreen() {
                 }`}
                 onClick={() => isAvailable && assignStrategy(slotIndex)}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <span
-                    className="text-xs font-bold px-2.5 py-1 rounded"
+                    className="text-xs font-bold px-2.5 py-1 rounded shrink-0"
                     style={{
                       backgroundColor: card.color,
                       color: "#fff",
@@ -96,11 +96,11 @@ export function StrategyScreen() {
                   >
                     {card.index}
                   </span>
-                  <span className="text-base font-semibold">
+                  <span className="text-base font-semibold flex-1">
                     {card.name}
                   </span>
                   {slot.tradeGoods > 0 && (
-                    <span className="text-sm text-yellow-400">
+                    <span className="text-sm text-yellow-400 shrink-0">
                       +{slot.tradeGoods} TG
                     </span>
                   )}
