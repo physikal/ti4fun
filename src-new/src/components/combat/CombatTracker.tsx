@@ -40,6 +40,14 @@ export function CombatTracker() {
     }));
   }
 
+  function resetHits() {
+    const zeroed: Record<number, number> = {};
+    for (const id of combatants) {
+      zeroed[id] = 0;
+    }
+    setHits(zeroed);
+  }
+
   function resetCombat() {
     setHits({});
     setCombatants([]);
@@ -150,6 +158,9 @@ export function CombatTracker() {
           <div className="flex gap-2 justify-center">
             <HudButton size="sm" onClick={resetCombat}>
               New Combat
+            </HudButton>
+            <HudButton size="sm" onClick={resetHits}>
+              Reset
             </HudButton>
             <HudButton variant="accent" onClick={closeCombat}>
               Done

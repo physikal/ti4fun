@@ -10,7 +10,7 @@ import {
   getStrategyName,
   getStrategyColor,
 } from "src/data/strategyCards";
-import { HACAN_ID, NAALU_ID, WINNU_ID } from "src/data/factions";
+import { HACAN_ID, WINNU_ID } from "src/data/factions";
 import { getPlayerDisplayName } from "src/store/selectors";
 import type { GameState } from "src/store/types";
 
@@ -28,7 +28,6 @@ export function StrategyScreen() {
   const randomSpeaker = useGameStore((s) => s.randomSpeaker);
   const confirmSpeaker = useGameStore((s) => s.confirmSpeaker);
   const setModal = useGameStore((s) => s.setModal);
-  const setTelepathicTarget = useGameStore((s) => s.setTelepathicTarget);
   const swapStrategies = useGameStore((s) => s.swapStrategies);
 
   const [swapMode, setSwapMode] = useState(false);
@@ -40,7 +39,6 @@ export function StrategyScreen() {
   const currentPlayer = players[currentChooser];
 
   const hasHacan = players.some((p) => p.factionId === HACAN_ID);
-  const hasNaalu = players.some((p) => p.factionId === NAALU_ID);
   const hasWinnu = players.some((p) => p.factionId === WINNU_ID);
 
   return (
@@ -107,9 +105,9 @@ export function StrategyScreen() {
                 </div>
 
                 {/* Card description */}
-                <div className="text-xs sm:text-sm leading-snug text-hud-muted space-y-1">
+                <div className="text-sm sm:text-base leading-snug text-hud-muted space-y-1">
                   <p>{card.primary}</p>
-                  <p className="text-hud-muted/60">
+                  <p className="text-xs sm:text-sm text-hud-muted/60">
                     S: {card.secondary}
                   </p>
                 </div>
@@ -166,30 +164,6 @@ export function StrategyScreen() {
               {t("confirm")}
             </HudButton>
           </div>
-        </div>
-      </Modal>
-
-      {/* Telepathic Modal (Naalu) */}
-      <Modal
-        open={modal?.type === "telepathic"}
-        title={t("telepathicPick")}
-      >
-        <div className="grid grid-cols-2 gap-2">
-          {players
-            .filter((p) => p.factionId !== NAALU_ID)
-            .map((player) => (
-              <div
-                key={player.id}
-                onClick={() => {
-                  setTelepathicTarget(player.id);
-                  const store = useGameStore.getState();
-                  store.initActionPhase();
-                }}
-                className="cursor-pointer"
-              >
-                <PlayerBadge player={player} />
-              </div>
-            ))}
         </div>
       </Modal>
 
@@ -258,29 +232,17 @@ export function StrategyScreen() {
                 {hasHacan ? t("quantumSwap") : t("acquiescence")}
               </HudButton>
             )}
-            {hasNaalu && (
-              <HudButton
-                className="w-full"
-                onClick={() => setModal({ type: "telepathic" })}
-              >
-                Naalu Telepathic
-              </HudButton>
-            )}
             <HudButton
               className="w-full"
               variant="accent"
               onClick={() => {
                 setSwapMode(false);
                 setSwapFirst(null);
-                if (hasNaalu) {
-                  setModal({ type: "telepathic" });
-                } else {
-                  setModal(null);
-                  useGameStore.getState().initActionPhase();
-                }
+                setModal(null);
+                useGameStore.getState().initActionPhase();
               }}
             >
-              {hasNaalu ? t("next") + " →" : t("done")}
+              {t("done")}
             </HudButton>
           </div>
         )}

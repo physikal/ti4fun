@@ -102,7 +102,6 @@ function createInitialState(): GameState {
     playerChooseCount: 0,
     endOfStrategyPhase: false,
     naaluStrategyIndex: null,
-    telepathicPlayerId: null,
     actionHistory: [],
     mecatolScored: false,
     agendaPhase: 0,
@@ -146,7 +145,6 @@ interface GameActions {
   assignStrategy: (slotIndex: number) => void;
   undoStrategy: () => void;
   endStrategyPhase: () => void;
-  setTelepathicTarget: (playerId: number) => void;
   swapStrategies: (slotA: number, slotB: number) => void;
 
   initActionPhase: () => void;
@@ -155,6 +153,7 @@ interface GameActions {
     strategy2: boolean;
     pass: boolean;
     tactical: boolean;
+    component: boolean;
   }) => void;
   nextPlayerAction: () => void;
   undoAction: () => void;
@@ -267,9 +266,15 @@ export const useGameStore = create<GameStore>()(
         set({ speakerId: playerId }),
 
       randomSpeaker: () =>
-        set((state) => ({
-          speakerId: Math.floor(Math.random() * state.playerCount),
-        })),
+        set((state) => {
+          const excludeId = state.modal?.excludePlayerId;
+          const candidates = state.players
+            .map((p) => p.id)
+            .filter((id) => id !== excludeId);
+          const picked =
+            candidates[Math.floor(Math.random() * candidates.length)];
+          return { speakerId: picked ?? 0 };
+        }),
 
       confirmSpeaker: () => {
         const state = get();
@@ -301,7 +306,6 @@ export const useGameStore = create<GameStore>()(
             playerChooseCount: 0,
             endOfStrategyPhase: false,
             naaluStrategyIndex: null,
-            telepathicPlayerId: null,
             currentPlayerTimerSec: 0,
             _currentChooser: speakerId,
           } as Partial<GameState> & { _currentChooser: number };
@@ -439,9 +443,6 @@ export const useGameStore = create<GameStore>()(
         logAction(get, set, "Strategy phase ends");
         get().resetActivity();
 
-        const hasNaalu = state.players.some(
-          (p) => p.factionId === NAALU_ID,
-        );
         const hasHacan = state.players.some(
           (p) => p.factionId === HACAN_ID,
         );
@@ -449,7 +450,7 @@ export const useGameStore = create<GameStore>()(
           (p) => p.factionId === WINNU_ID,
         );
 
-        if (hasHacan || hasWinnu || hasNaalu) {
+        if (hasHacan || hasWinnu) {
           set({
             modal: { type: "strategyEffect" },
           });
@@ -457,30 +458,6 @@ export const useGameStore = create<GameStore>()(
         }
 
         get().initActionPhase();
-      },
-
-      setTelepathicTarget: (playerId) => {
-        const targetName = playerName(get().players[playerId]);
-        set((state) => {
-          let targetSlot = -1;
-          for (let i = 0; i < state.strategySlots.length; i++) {
-            if (state.strategySlots[i]?.playerId === playerId) {
-              targetSlot = i;
-              break;
-            }
-          }
-          return {
-            telepathicPlayerId: playerId,
-            naaluStrategyIndex: targetSlot >= 0 ? targetSlot : null,
-            modal: null,
-          };
-        });
-        logAction(
-          get,
-          set,
-          `Naalu telepathic -> ${targetName}`,
-        );
-        get().resetActivity();
       },
 
       swapStrategies: (slotA, slotB) => {
@@ -564,6 +541,7 @@ export const useGameStore = create<GameStore>()(
           : "?";
         let actionType = "Tactical";
         if (actions.pass) actionType = "Pass";
+        else if (actions.component) actionType = "Component";
         else if (actions.strategy1) {
           actionType = getStrategyName(activeSlot?.cardIndex ?? 0);
         }
@@ -670,7 +648,11 @@ export const useGameStore = create<GameStore>()(
             currentPlayerTimerSec: 0,
             timerPaused: false,
             players: updatedPlayers,
-            modal: showSpeaker ? { type: "speaker" } : null,
+            modal: showSpeaker
+              ? (state.speakerId !== null
+                ? { type: "speaker" as const, excludePlayerId: state.speakerId }
+                : { type: "speaker" as const })
+              : null,
             activeSlotIndex: nextSlot,
             roundCounter: rounds,
           };

@@ -49,6 +49,7 @@ export function ActionScreen() {
     strategy2: false,
     pass: false,
     tactical: false,
+    component: false,
   });
   const [cardEffect, setCardEffect] = useState<{
     cardName: string;
@@ -82,7 +83,8 @@ export function ActionScreen() {
     selectedActions.strategy1 ||
     selectedActions.strategy2 ||
     selectedActions.pass ||
-    selectedActions.tactical;
+    selectedActions.tactical ||
+    selectedActions.component;
 
   const timerFlashing = currentPlayerTimerSec >= 180;
 
@@ -129,6 +131,7 @@ export function ActionScreen() {
       strategy2: false,
       pass: false,
       tactical: false,
+      component: false,
     });
   };
 
@@ -393,6 +396,7 @@ export function ActionScreen() {
                   strategy1: !s.strategy1,
                   pass: false,
                   tactical: false,
+                  component: false,
                 }))
               }
             >
@@ -416,6 +420,7 @@ export function ActionScreen() {
                   strategy2: !s.strategy2,
                   pass: false,
                   tactical: false,
+                  component: false,
                 }))
               }
             >
@@ -432,12 +437,13 @@ export function ActionScreen() {
                 : ""
             }
             onClick={() =>
-              setSelectedActions((s) => ({
+              setSelectedActions({
                 strategy1: false,
                 strategy2: false,
-                pass: !s.pass,
+                pass: !selectedActions.pass,
                 tactical: false,
-              }))
+                component: false,
+              })
             }
           >
             {t("pass")}
@@ -451,15 +457,36 @@ export function ActionScreen() {
                 : ""
             }
             onClick={() =>
-              setSelectedActions((s) => ({
+              setSelectedActions({
                 strategy1: false,
                 strategy2: false,
                 pass: false,
-                tactical: !s.tactical,
-              }))
+                tactical: !selectedActions.tactical,
+                component: false,
+              })
             }
           >
             Tactical
+          </HudButton>
+
+          <HudButton
+            size="sm"
+            className={
+              selectedActions.component
+                ? "ring-2 ring-hud-accent bg-hud-accent/10"
+                : ""
+            }
+            onClick={() =>
+              setSelectedActions({
+                strategy1: false,
+                strategy2: false,
+                pass: false,
+                tactical: false,
+                component: !selectedActions.component,
+              })
+            }
+          >
+            Component
           </HudButton>
 
           <HudButton
@@ -512,17 +539,19 @@ export function ActionScreen() {
       >
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-2">
-            {players.map((player) => (
-              <div
-                key={player.id}
-                onClick={() => setSpeaker(player.id)}
-                className={`cursor-pointer ${
-                  speakerId === player.id ? "ring-2 ring-hud-accent rounded-lg" : ""
-                }`}
-              >
-                <PlayerBadge player={player} />
-              </div>
-            ))}
+            {players
+              .filter((p) => p.id !== modal?.excludePlayerId)
+              .map((player) => (
+                <div
+                  key={player.id}
+                  onClick={() => setSpeaker(player.id)}
+                  className={`cursor-pointer ${
+                    speakerId === player.id ? "ring-2 ring-hud-accent rounded-lg" : ""
+                  }`}
+                >
+                  <PlayerBadge player={player} />
+                </div>
+              ))}
           </div>
           <div className="flex gap-2 justify-center">
             <HudButton size="sm" onClick={randomSpeaker}>
