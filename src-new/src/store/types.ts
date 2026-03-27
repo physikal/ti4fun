@@ -83,7 +83,6 @@ export interface ActionSnapshot {
 export interface ModalState {
   type:
     | "speaker"
-    | "telepathic"
     | "strategyEffect"
     | "options"
     | "transition"
@@ -91,6 +90,7 @@ export interface ModalState {
     | "stopAlert"
     | "combat"
     | "speakerTiebreak";
+  excludePlayerId?: number;
   data?: unknown;
 }
 
@@ -109,7 +109,6 @@ export interface GameState {
   playerChooseCount: number;
   endOfStrategyPhase: boolean;
   naaluStrategyIndex: number | null;
-  telepathicPlayerId: number | null;
   actionHistory: ActionSnapshot[];
   mecatolScored: boolean;
   agendaPhase: number;

@@ -59,7 +59,6 @@ export interface TranslationStrings {
   vpLimit: string;
   playerName: string;
   color: string;
-  telepathicPick: string;
   quantumSwap: string;
   acquiescence: string;
   firmamentTransform: string;

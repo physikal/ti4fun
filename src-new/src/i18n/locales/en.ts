@@ -61,7 +61,6 @@ export const en: TranslationStrings = {
   vpLimit: "VP Limit",
   playerName: "Player Name",
   color: "Color",
-  telepathicPick: "Telepathic: Pick player to copy",
   quantumSwap: "Quantum Datahub Node",
   acquiescence: "Acquiescence (Winnu)",
   firmamentTransform: "Transform to Obsidian",

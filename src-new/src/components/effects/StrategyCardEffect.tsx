@@ -286,7 +286,7 @@ export default function StrategyCardEffect({
         <div className="absolute inset-x-0 bottom-8 flex flex-col items-center gap-5 screen-fade-in px-6">
           {(primaryText || secondaryText) && (
             <div
-              className="max-w-md w-full rounded-xl p-4 sm:p-5 backdrop-blur-sm"
+              className="max-w-lg w-full rounded-xl p-5 sm:p-6 backdrop-blur-sm"
               style={{
                 background: `linear-gradient(135deg, ${cardColor}15, ${cardColor}08)`,
                 border: `1px solid ${cardColor}40`,
@@ -295,15 +295,15 @@ export default function StrategyCardEffect({
             >
               {primaryText && (
                 <p
-                  className="text-sm sm:text-base font-medium leading-relaxed"
+                  className="text-base sm:text-lg font-medium leading-relaxed"
                   style={{ color: `${cardColor}ee` }}
                 >
                   {primaryText}
                 </p>
               )}
               {secondaryText && (
-                <p className="mt-2 text-xs sm:text-sm text-white/50 leading-relaxed">
-                  <span className="uppercase tracking-wider text-[10px] text-white/30 mr-1">
+                <p className="mt-3 text-sm sm:text-base text-white/50 leading-relaxed">
+                  <span className="uppercase tracking-wider text-xs text-white/30 mr-1">
                     Secondary:
                   </span>
                   {secondaryText}
