@@ -42,7 +42,7 @@ function sampleTextPositions(
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#fff";
-  ctx.fillText(label, cw / 2, ch / 2);
+  ctx.fillText(label, cw / 2, ch * 0.3);
 
   const imageData = ctx.getImageData(0, 0, cw, ch);
   const pixels = imageData.data;
